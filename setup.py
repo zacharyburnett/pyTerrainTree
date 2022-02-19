@@ -86,5 +86,10 @@ setup(
     url=metadata['url'],
     setup_requires=['cython', 'dunamai', 'setuptools>=41.2'],
     ext_modules=extensions,
-    python_requires='>=3.6'
+    python_requires='>=3.10',
+    extras_require={
+        'testing': ['pytest', 'pytest-cov', 'pytest-xdist'],
+        'development': ['flake8', 'isort', 'oitnb'],
+        'documentation': ['m2r2', 'sphinx', 'sphinx-rtd-theme'],
+    },
 )

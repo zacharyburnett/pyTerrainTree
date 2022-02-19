@@ -3,6 +3,7 @@ from os import PathLike
 import subprocess
 import sys
 
+
 class TreeType(Enum):
     PR_TREE = 'pr'
     PMR_TREE = 'pmr'
