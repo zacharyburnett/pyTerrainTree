@@ -11,5 +11,8 @@ pyTerrainTree is a Python wrapper around the [`Terrain_Trees` C++ library]
 (https://github.com/FellegaraR/Terrain_Trees).
 
 ```shell
-pip install pyterraintree
+git clone https://github.com/zacharyburnett/pyTerrainTree
+cd pyTerrainTree
+pip install -e .
+python setup.py build_ext --inplace
 ```
