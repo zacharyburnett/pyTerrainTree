@@ -66,7 +66,7 @@ include_directories = [str(filename) for filename in include_directories]
 
 extensions = cythonize([
     Extension(
-        'Terrain_Trees',
+        'Terrain_Tree',
         sources=source_filenames,
         language='c++',
         include_dirs=include_directories,

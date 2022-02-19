@@ -1,17 +1,4 @@
-import PythonMain
-
-py_tree = PythonMain.PyPRT_Tree(1, 4)
-py_mesh = PythonMain.PyMesh()
-py_tree.get_mesh(py_mesh)
-py_reader = PythonMain.PyReader()
-# py_reader.Py_read_mesh_old(py_mesh,"../data/devil_0.tri")
-py_reader.Py_read_mesh(py_tree, 'data/simple_terrain.soup')
-py_tree.build_tree()
-# py_tree.get_leaves_number()
-py_reindexer = PythonMain.PyReindexer()
-py_reindexer.reindex_tree_and_mesh(py_tree, False, False)
-root = PythonMain.PyNode_V()
-py_tree.get_root(root)
+import Terrain_Trees
 
 
 def dfs(root, mesh):
@@ -33,4 +20,19 @@ def dfs(root, mesh):
 
 
 if __name__ == '__main__':
+    py_tree = Terrain_Trees.PyPRT_Tree(1, 4)
+    py_mesh = Terrain_Trees.PyMesh()
+    py_tree.get_mesh(py_mesh)
+
+    py_reader = Terrain_Trees.PyReader()
+    py_reader.Py_read_mesh(py_tree, '../modules/Terrain_Trees/data/devil_0.tri')
+    py_tree.build_tree()
+
+    # py_tree.get_leaves_number()
+    py_reindexer = Terrain_Trees.PyReindexer()
+    py_reindexer.reindex_tree_and_mesh(py_tree, False, False)
+
+    root = Terrain_Trees.PyNode_V()
+    py_tree.get_root(root)
+
     dfs(root, py_mesh)
