@@ -17,11 +17,11 @@ class DivisionType(Enum):
 
 class TerrainTree:
     def __init__(
-            self,
-            vertex_threshold: int,
-            triangle_threshold: int,
-            tree_type: TreeType,
-            division: DivisionType,
+        self,
+        vertex_threshold: int,
+        triangle_threshold: int,
+        tree_type: TreeType,
+        division: DivisionType,
     ):
         subprocess.run(
             f'{sys.executable} -m pip install importlib_metadata',

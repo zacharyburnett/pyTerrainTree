@@ -4,7 +4,7 @@ import sys
 from typing import List
 
 from Cython.Build import cythonize
-from setuptools import Extension, config, setup
+from setuptools import config, Extension, setup
 
 try:
     from importlib import metadata as importlib_metadata
@@ -55,23 +55,37 @@ source_filenames.extend(sources_directory.glob('utilities/**/*.cpp'))
 
 include_directories = [
     core_library_directory,
-    *(core_library_directory / directory for directory in
-      ('terrain_trees', 'utilities', 'basic_types', 'curvature', 'geometry', 'io', 'queries', 'roughness', 'statistics', 'terrain_features')
-      ),
+    *(
+        core_library_directory / directory
+        for directory in (
+            'terrain_trees',
+            'utilities',
+            'basic_types',
+            'curvature',
+            'geometry',
+            'io',
+            'queries',
+            'roughness',
+            'statistics',
+            'terrain_features',
+        )
+    ),
     '/usr/include/eigen3',
 ]
 
 source_filenames = [str(filename) for filename in source_filenames]
 include_directories = [str(filename) for filename in include_directories]
 
-extensions = cythonize([
-    Extension(
-        'Terrain_Tree',
-        sources=source_filenames,
-        language='c++',
-        include_dirs=include_directories,
-    )
-])
+extensions = cythonize(
+    [
+        Extension(
+            'Terrain_Tree',
+            sources=source_filenames,
+            language='c++',
+            include_dirs=include_directories,
+        )
+    ]
+)
 
 metadata = config.read_configuration('setup.cfg')['metadata']
 
