@@ -49,7 +49,8 @@ sources_directory = Path(__file__).parent / 'modules' / 'Terrain_Trees' / 'sourc
 core_library_directory = sources_directory / 'core_library' / 'sources'
 cython_directory = Path(__file__).parent / 'pyterraintree' / 'cython'
 
-source_filenames = [cython_directory / 'py_terrain_trees.pyx']
+pyx_filename = cython_directory / 'py_terrain_trees.pyx'
+source_filenames = [pyx_filename]
 source_filenames.extend(core_library_directory.glob('**/*.cpp'))
 source_filenames.extend(sources_directory.glob('utilities/**/*.cpp'))
 
@@ -79,8 +80,9 @@ include_directories = [str(filename) for filename in include_directories]
 extensions = cythonize(
     [
         Extension(
-            'Terrain_Tree',
+            'Terrain_Trees',
             sources=source_filenames,
+            libraries=source_filenames,
             language='c++',
             include_dirs=include_directories,
         )
