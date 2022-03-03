@@ -1,4 +1,3 @@
-from Triangle cimport Triangle
 from libcpp.vector cimport vector
 
 

@@ -1,4 +1,4 @@
-from Mesh cimport Mesh
+cimport c_Mesh
 from libcpp cimport bool
 from libcpp.string cimport string
 
@@ -7,4 +7,4 @@ from libcpp.string cimport string
 cdef extern from "io/reader.h":
     cdef cppclass Reader:
         @staticmethod
-        bool read_mesh(Mesh& mesh, string path);        
+        bool read_mesh(c_Mesh.Mesh& mesh, string path);

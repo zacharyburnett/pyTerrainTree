@@ -1,154 +1,142 @@
 # distutils: language = c++
-from Mesh cimport Mesh
-from cython.operator cimport dereference as deref
+from typing import List
+
 from libcpp cimport bool
+from cython.operator cimport dereference
 from libcpp.vector cimport vector
 
+cimport c_Vertex, c_Node_V, c_Triangle, c_Mesh, c_PRT_Tree, c_Reader, c_Reindexer
 
-cdef class PyMesh:
-    cdef Mesh *c_mesh
+cdef c_Reader.Reader *_c_tree_reader
+
+
+cdef class Mesh:
+    cdef c_Mesh.Mesh *_c_mesh
+
     def __cinit__(self):
-        self.c_mesh = new Mesh()
+        self._c_mesh = new c_Mesh.Mesh()
 
-    def get_vertex(self, int pos):
-        vertex = PyVertex() 
-        vertex.c_vertex = self.c_mesh.get_vertex(pos)
+    def vertex(self, int position) -> Vertex:
+        vertex = Vertex()
+        vertex._c_vertex = self._c_mesh.get_vertex(position)
         return vertex
 
-    def get_triangle(self, int pos):
-        triangle = PyTriangle() 
-        triangle.c_triangle = self.c_mesh.get_triangle(pos)
+    def triangle(self, int position) -> Triangle:
+        triangle = Triangle()
+        triangle._c_triangle = self._c_mesh.get_triangle(position)
         return triangle
 
-    # def __dealloc__(self):  ## will cause segmentation fault. 
-    #     del self.c_mesh
+    # def __dealloc__(self):  ## will cause segmentation fault.
+    #     del self._c_mesh
 
-from Vertex cimport Vertex
-
-
-cdef class PyVertex:
-    cdef Vertex c_vertex
+cdef class Vertex:
+    cdef c_Vertex.Vertex _c_vertex
 
     def __cinit__(self):
-        self.c_vertex = Vertex()
-    
-    def get_c(self, int pos):
-        return self.c_vertex.get_c(pos)
+        self._c_vertex = c_Vertex.Vertex()
 
-from Triangle cimport Triangle
+    def coordinate(self, int position) -> float:
+        return self._c_vertex.get_c(position)
 
-
-cdef class PyTriangle:
-    cdef Triangle c_triangle
+cdef class Triangle:
+    cdef c_Triangle.Triangle _c_triangle
 
     def __cinit__(self):
-        self.c_triangle = Triangle()
-    
-    def TV(self, int pos):
-        return self.c_triangle.TV(pos)
+        self._c_triangle = c_Triangle.Triangle()
 
-    def TE(self, int pos):
-        cdef vector[int] e
-        self.c_triangle.TE(pos, e)
-        return e
+    def vertex(self, int position) -> int:
+        return self._c_triangle.TV(position)
 
-from Reader cimport Reader
+    def edge(self, int position) -> List[int]:
+        cdef vector[int] edge
+        self._c_triangle.TE(position, edge)
+        return edge
 
-
-cdef class PyReader:
-    cdef Reader *c_reader  # declare as pointer to avoid using constructor, which is private 
-
-    def Py_read_mesh(self, PyPRT_Tree tree, str path):
-        path_new = bytes(path, encoding='utf8')
-        self.c_reader.read_mesh(tree.c_pt_pr_tree.get_mesh(), path_new)
-
-         
-    
-    # def Py_read_mesh_old(self, PyMesh mesh, str path):   # can work, but will cause Segmentation fault (core dumped). Probably because c_mesh is deleted after tree is deleted?
-    #     path_new = bytes(path, encoding='utf8')
-    #     self.c_reader.read_mesh(deref(mesh.c_mesh), path_new)
-
-
-from Node_V cimport Node_V
-
-
-cdef class PyNode_V:
-    cdef Node_V *c_node_v 
+cdef class Node_V:
+    cdef c_Node_V.Node_V *_c_node_v
     # cdef vector[set[int]] vvs
 
     def __cinit__(self):
-        self.c_node_v = new Node_V()
+        self._c_node_v = new c_Node_V.Node_V()
 
-    def get_v_start(self):
-        return self.c_node_v.get_v_start()
-    
-    def get_v_end(self):
-        return self.c_node_v.get_v_end()
+    @property
+    def v_start(self) -> int:
+        return self._c_node_v.get_v_start()
 
-    def get_VT(self, PyMesh mesh):
-        cdef vector[vector[int]] vts
-        self.c_node_v.get_VT(vts, deref(mesh.c_mesh))
-        return vts
+    @property
+    def v_end(self) -> int:
+        return self._c_node_v.get_v_end()
 
-    def is_leaf(self):
-        return self.c_node_v.is_leaf()
+    def vertex_triangle_relations(self, Mesh mesh) -> List[List[int]]:
+        cdef vector[vector[int]] vertex_triangle_relations
+        self._c_node_v.get_VT(vertex_triangle_relations, dereference(mesh._c_mesh))
+        return vertex_triangle_relations
 
-    def get_son(self,  int i):
-        node_v = PyNode_V()
-        if self.c_node_v.get_son(i) is NULL:
-            print("Null")
+    @property
+    def is_leaf(self) -> bool:
+        return self._c_node_v.is_leaf()
+
+    def child(self, int index) -> Node_V:
+        node_v = Node_V()
+        if self._c_node_v.get_son(index) is NULL:
             return None
         else:
-            node_v.c_node_v = self.c_node_v.get_son(i)
+            node_v._c_node_v = self._c_node_v.get_son(index)
             return node_v
-            
-    def indexes_vertices(self):
-        return self.c_node_v.indexes_vertices()
 
+    @property
+    def is_indexing_vertices(self) -> bool:
+        return self._c_node_v.indexes_vertices()
 
     # def __dealloc__(self):
-    #     del self.c_node_v
+    #     del self._c_node_v
 
-from PRT_Tree cimport PRT_Tree
+cdef class PRT_Tree:
+    cdef c_PRT_Tree.PRT_Tree *_c_tree
 
+    def __cinit__(self, int vertices_per_leaf, int division_type, build: bool = True):
+        self._c_tree = new c_PRT_Tree.PRT_Tree(vertices_per_leaf, division_type)
+        if build:
+            self._c_tree.build_tree()
 
-cdef class PyPRT_Tree:
-    cdef PRT_Tree *c_pt_pr_tree
-    # cdef Mesh * c_mesh
-    def __cinit__(self, int v_per_leaf, int division_type):
-        self.c_pt_pr_tree = new PRT_Tree(v_per_leaf, division_type)
+    @classmethod
+    def from_file(cls, str path, int vertices_per_leaf, int division_type) -> PRT_Tree:
+        tree = PRT_Tree(vertices_per_leaf, division_type, build=False)
+        tree.read_file(path)
+        tree._c_tree.build_tree()
+        return tree
 
-    def build_tree(self):
-        self.c_pt_pr_tree.build_tree()
+    def read_file(self, str path):
+        _c_tree_reader.read_mesh(self._c_tree.get_mesh(), bytes(path, encoding='utf8'))
 
-    def get_mesh(self, PyMesh mesh):
-        mesh.c_mesh = &(self.c_pt_pr_tree.get_mesh()) 
+    @property
+    def mesh(self) -> Mesh:
+        mesh = Mesh()
+        mesh._c_mesh = &(self._c_tree.get_mesh())
+        return mesh
 
-    def get_root(self, PyNode_V node):
-        node.c_node_v = &(self.c_pt_pr_tree.get_root()) 
+    @property
+    def root(self) -> Node_V:
+        node = Node_V()
+        node._c_node_v = &(self._c_tree.get_root())
+        return node
 
+    # @property
+    # def leaf_blocks(self) -> int:
+    #     return self._c_tree.get_leaves_number()
 
-    # def get_leaves_number(self):
-    #     return self.c_pt_pr_tree.get_leaves_number()
-    
+    def reindex(self, bool save_vertex_indices, bool save_triangle_indices):
+        cdef c_Reindexer.Reindexer _c_reindexer = c_Reindexer.Reindexer()
+        cdef vector[int] original_vertex_indices
+        cdef vector[int] original_triangle_indices
+
+        _c_reindexer.reindex_tree_and_mesh(
+            dereference(self._c_tree),
+            save_vertex_indices,
+            original_vertex_indices,
+            save_vertex_indices,
+            original_triangle_indices
+        )
+
     def __dealloc__(self):
-        del self.c_pt_pr_tree    
-
-from Reindexer cimport Reindexer
-
-
-cdef class PyReindexer:
-    cdef Reindexer c_reindexer
-    cdef vector[int] original_vertex_indices
-    cdef vector[int] original_triangle_indices
-
-    def __cinit__(self):
-        self.c_reindexer = Reindexer()
-
-    def reindex_tree_and_mesh(self, PyPRT_Tree pr_tree, bool save_v_indices,bool save_t_indices):
-        self.c_reindexer.reindex_tree_and_mesh(deref(pr_tree.c_pt_pr_tree),save_v_indices,self.original_vertex_indices, save_v_indices,self.original_triangle_indices)
-    
-    # def __dealloc__(self):
-    #     del self.original_vertex_indices    
-    #     del self.original_triangle_indices
-
+        del self._c_tree

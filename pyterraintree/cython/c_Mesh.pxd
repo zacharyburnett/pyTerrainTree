@@ -1,12 +1,12 @@
-from Triangle cimport Triangle
-from Vertex cimport Vertex
+cimport c_Triangle
+cimport c_Vertex
 
 
 cdef extern from "basic_types/mesh.h":
     cdef cppclass Mesh:
         Mesh() except +
-        Vertex& get_vertex(int)
-        Triangle& get_triangle(int)
+        c_Vertex.Vertex& get_vertex(int)
+        c_Triangle.Triangle& get_triangle(int)
         # Mesh(const Mesh) except +
         #V& getVertex(int)
         #double getX()
