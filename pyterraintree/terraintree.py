@@ -1,7 +1,6 @@
+from abc import abstractmethod
 from enum import Enum
 from os import PathLike
-import subprocess
-import sys
 
 import Terrain_Trees
 
@@ -13,43 +12,61 @@ class TreeType(Enum):
 
 
 class DivisionType(Enum):
-    QUAD_TREE = 'quad'
-    KD_TREE = 'kd'
+    QUAD_TREE = 4
+    KD_TREE = 2
 
 
 class TerrainTree:
     def __init__(
-        self,
-        vertex_threshold: int,
-        triangle_threshold: int,
-        tree_type: TreeType,
-        division: DivisionType,
+            self,
+            vertices_per_leaf: int,
+            division: DivisionType,
     ):
-        subprocess.run(
-            f'{sys.executable} -m pip install importlib_metadata',
-            shell=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-
-    @classmethod
-    def read(cls, path: PathLike) -> 'TerrainTree':
-        # TODO specify tree threshold values
-        py_tree = Terrain_Trees.PyPRT_Tree(1, 4)
-        py_mesh = Terrain_Trees.PyMesh()
-        py_tree.get_mesh(py_mesh)
-
-        py_reader = Terrain_Trees.PyReader()
-        py_reader.Py_read_mesh(py_tree, str(path))
-
-        py_tree.build_tree()
-
-        # TODO build Python object from tree object
-        return cls()
-
-    def write(self, path: PathLike):
-        pass
+        self.__vertices_per_leaf = vertices_per_leaf
+        self.__division = division
+        self.__tree = None
 
     @property
-    def blocks(self):
-        return
+    def vertices_per_leaf(self) -> int:
+        return self.__vertices_per_leaf
+
+    @property
+    def division(self) -> DivisionType:
+        return self.__division
+
+    @classmethod
+    def from_file(cls, path: PathLike, vertices_per_leaf: int, division: DivisionType) -> 'TerrainTree':
+        instance = cls(vertices_per_leaf, division)
+        instance.__tree.read_file(path)
+        return instance
+
+    @abstractmethod
+    def to_file(self, path: PathLike):
+        raise NotImplementedError()
+
+
+class PointRegionTree(TerrainTree):
+    def __init__(self, vertices_per_leaf: int, division: DivisionType):
+        super().__init__(vertices_per_leaf, division)
+        self.__tree = Terrain_Trees.PRT_Tree(self.vertices_per_leaf, self.division)
+
+    def to_file(self, path: PathLike):
+        pass
+
+
+class PointMatrixTree(TerrainTree):
+    def __init__(self, vertices_per_leaf: int, division: DivisionType):
+        super().__init__(vertices_per_leaf, division)
+        raise NotImplementedError()
+
+    def to_file(self, path: PathLike):
+        raise NotImplementedError()
+
+
+class PointMatrixRegionTree(TerrainTree):
+    def __init__(self, vertices_per_leaf: int, division: DivisionType):
+        super().__init__(vertices_per_leaf, division)
+        raise NotImplementedError()
+
+    def to_file(self, path: PathLike):
+        raise NotImplementedError()
