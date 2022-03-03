@@ -1,0 +1,7 @@
+[build-system]
+requires = [
+    "cython",
+    "dunamai",
+    "setuptools",
+]
+build-backend = "setuptools.build_meta"
