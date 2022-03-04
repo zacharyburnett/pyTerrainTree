@@ -18,9 +18,7 @@ class DivisionType(Enum):
 
 class TerrainTree:
     def __init__(
-            self,
-            vertices_per_leaf: int,
-            division: DivisionType,
+        self, vertices_per_leaf: int, division: DivisionType,
     ):
         self.__vertices_per_leaf = vertices_per_leaf
         self.__division = division
@@ -35,7 +33,9 @@ class TerrainTree:
         return self.__division
 
     @classmethod
-    def from_file(cls, path: PathLike, vertices_per_leaf: int, division: DivisionType) -> 'TerrainTree':
+    def from_file(
+        cls, path: PathLike, vertices_per_leaf: int, division: DivisionType
+    ) -> 'TerrainTree':
         instance = cls(vertices_per_leaf, division)
         instance.__tree.read_file(path)
         return instance
