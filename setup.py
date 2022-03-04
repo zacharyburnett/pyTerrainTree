@@ -17,8 +17,8 @@ source_filenames.extend(cpp_sources_directory.glob('utilities/**/*.cpp'))
 include_directories = [
     cpp_core_library_directory,
     *(
-        cpp_core_library_directory / directory
-        for directory in (
+        directory for directory in cpp_core_library_directory.iterdir()
+        if directory.name in (
             'terrain_trees',
             'utilities',
             'basic_types',
