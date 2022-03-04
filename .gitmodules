@@ -1,0 +1,3 @@
+[submodule "modules/Terrain_Trees"]
+	path = modules/Terrain_Trees
+	url = https://github.com/UMDGeoVis/Terrain_Trees
