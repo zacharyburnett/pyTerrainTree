@@ -37,6 +37,8 @@ include_directories = [
 source_filenames = [str(filename) for filename in source_filenames]
 include_directories = [str(filename) for filename in include_directories]
 
+raise ValueError(f'{source_filenames}\n{include_directories}')
+
 extensions = cythonize(
     [
         Extension(
