@@ -1,11 +1,17 @@
 # distutils: language = c++
 from typing import List
 
-from libcpp cimport bool
+cimport c_Mesh
+cimport c_Node_V
+cimport c_PRT_Tree
+cimport c_Reader
+cimport c_Reindexer
+cimport c_Triangle
+cimport c_Vertex
 from cython.operator cimport dereference
+from libcpp cimport bool
 from libcpp.vector cimport vector
 
-cimport c_Vertex, c_Node_V, c_Triangle, c_Mesh, c_PRT_Tree, c_Reader, c_Reindexer
 
 cdef c_Reader.Reader *_c_tree_reader
 

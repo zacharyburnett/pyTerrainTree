@@ -1,16 +1,16 @@
-import warnings
 from pathlib import Path
+import warnings
 
 from Cython.Build import cythonize
 from dunamai import Version
 from setuptools import Extension, find_packages, setup
 
-cpp_sources_directory = Path(__file__).parent / 'modules' / 'Terrain_Trees' / 'sources'
+cpp_sources_directory = Path.cwd() / 'modules' / 'Terrain_Trees' / 'sources'
 cpp_core_library_directory = cpp_sources_directory / 'core_library' / 'sources'
-cython_sources_directory = Path(__file__).parent / 'pyterraintree' / 'cython'
+cython_sources_directory = Path.cwd() / 'pyterraintree' / 'cython'
 
-source_filenames = [cython_sources_directory / 'py_terrain_trees.pyx']
-# source_filenames.extend(cython_sources_directory.glob('**/*.pyx'))
+source_filenames = []
+source_filenames.extend(cython_sources_directory.glob('**/*.pyx'))
 source_filenames.extend(cpp_core_library_directory.glob('**/*.cpp'))
 source_filenames.extend(cpp_sources_directory.glob('utilities/**/*.cpp'))
 
@@ -19,17 +19,17 @@ include_directories = [
     *(
         cpp_core_library_directory / directory
         for directory in (
-        'terrain_trees',
-        'utilities',
-        'basic_types',
-        'curvature',
-        'geometry',
-        'io',
-        'queries',
-        'roughness',
-        'statistics',
-        'terrain_features',
-    )
+            'terrain_trees',
+            'utilities',
+            'basic_types',
+            'curvature',
+            'geometry',
+            'io',
+            'queries',
+            'roughness',
+            'statistics',
+            'terrain_features',
+        )
     ),
     '/usr/include/eigen3',
 ]
