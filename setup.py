@@ -17,8 +17,10 @@ source_filenames.extend(cpp_sources_directory.glob('utilities/**/*.cpp'))
 include_directories = [
     cpp_core_library_directory,
     *(
-        directory for directory in cpp_core_library_directory.iterdir()
-        if directory.name in (
+        directory
+        for directory in cpp_core_library_directory.iterdir()
+        if directory.name
+        in (
             'terrain_trees',
             'utilities',
             'basic_types',
@@ -36,8 +38,6 @@ include_directories = [
 
 source_filenames = [str(filename) for filename in source_filenames]
 include_directories = [str(filename) for filename in include_directories]
-
-raise ValueError(f'{source_filenames}\n{include_directories}')
 
 extensions = cythonize(
     [

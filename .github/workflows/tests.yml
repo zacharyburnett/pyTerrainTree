@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: clone repository
         uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: install Python
         uses: actions/setup-python@v2
         with:
@@ -42,6 +44,8 @@ jobs:
     steps:
       - name: clone repository
         uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: install Python
         uses: actions/setup-python@v2
         with:
