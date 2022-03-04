@@ -28,6 +28,9 @@ jobs:
         with:
           path: ${{ env.pythonLocation }}
           key: build-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'setup.*') }}
+      - name: install dependencies on Linux
+        if: contains(matrix.os, 'ubuntu')
+        run: sudo apt install libboost-all-dev
       - name: build wheel
         run: pip wheel . -w dist --no-deps
       - name: save wheel
