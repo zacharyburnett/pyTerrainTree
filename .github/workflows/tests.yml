@@ -24,6 +24,9 @@ jobs:
         with:
           path: ${{ env.pythonLocation }}
           key: lint-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'setup.*') }}
+      - name: install dependencies on Linux
+        if: contains(matrix.os, 'ubuntu')
+        run: sudo apt install libboost-all-dev
       - name: install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: pip install ".[development]"
