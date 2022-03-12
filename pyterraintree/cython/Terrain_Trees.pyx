@@ -1,5 +1,5 @@
 # distutils: language = c++
-from typing import List
+from typing import List, Tuple
 
 cimport c_Mesh
 cimport c_Node_V
@@ -8,13 +8,12 @@ cimport c_Reader
 cimport c_Reindexer
 cimport c_Triangle
 cimport c_Vertex
+cimport c_Geometry
 from cython.operator cimport dereference
 from libcpp cimport bool
 from libcpp.vector cimport vector
 
-
 cdef c_Reader.Reader *_c_tree_reader
-
 
 cdef class Mesh:
     cdef c_Mesh.Mesh *_c_mesh
@@ -146,3 +145,41 @@ cdef class PRT_Tree:
 
     def __dealloc__(self):
         del self._c_tree
+
+
+class Point:
+    def __init__(self, *args, **kwargs):
+        self.__point = c_Geometry.Point(*args, **kwargs)
+
+    def __copy__(self)-> 'Point':
+        return self.__class__(self.coords)
+
+    @property
+    def coords(self) -> Tuple[float, float]:
+        return self.__point.coords
+
+    def distance(self, other: Point) -> float:
+        return self.__point.distance(other.__point)
+
+    def __eq__(self, other: Point) -> bool:
+        return self.__point == other.__point
+
+    def __ne__(self, other: Point) -> bool:
+        return self.__point != other.__point
+
+    def __lt__(self, other: Point) -> bool:
+        return self.__point < other.__point
+
+    def __gt__(self, other: Point) -> bool:
+        return self.__point > other.__point
+
+    def __add__(self, other: Point) -> bool:
+        return self.__point + other.__point
+
+    def __sub__(self, other: Point) -> bool:
+        return self.__point - other.__point
+
+    def __mul__(self, other: Point) -> bool:
+        return self.__point * other.__point
+
+
