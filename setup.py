@@ -9,16 +9,19 @@ cpp_sources_directory = Path.cwd() / 'modules' / 'Terrain_Trees' / 'sources'
 cpp_core_library_directory = cpp_sources_directory / 'core_library' / 'sources'
 cython_sources_directory = Path.cwd() / 'pyterraintree' / 'cython'
 
-source_filenames = []
-source_filenames.extend(cython_sources_directory.glob('**/*.pyx'))
-source_filenames.extend(cpp_core_library_directory.glob('**/*.cpp'))
-source_filenames.extend(cpp_sources_directory.glob('utilities/**/*.cpp'))
+source_filenames = [
+    *cython_sources_directory.glob('**/*.pyx'),
+    *cpp_core_library_directory.glob('**/*.cpp'),
+    *cpp_sources_directory.glob('utilities/**/*.cpp'),
+]
 
 include_directories = [
     cpp_core_library_directory,
     *(
-        cpp_core_library_directory / directory
-        for directory in (
+        directory
+        for directory in cpp_core_library_directory.iterdir()
+        if directory.name
+        in (
             'terrain_trees',
             'utilities',
             'basic_types',

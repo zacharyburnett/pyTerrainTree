@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: clone repository
         uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: install Python
         uses: actions/setup-python@v2
         with:
@@ -22,6 +24,9 @@ jobs:
         with:
           path: ${{ env.pythonLocation }}
           key: lint-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'setup.*') }}
+      - name: install dependencies on Linux
+        if: contains(matrix.os, 'ubuntu')
+        run: sudo apt install libboost-all-dev
       - name: install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: pip install ".[development]"
@@ -42,6 +47,8 @@ jobs:
     steps:
       - name: clone repository
         uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: install Python
         uses: actions/setup-python@v2
         with:
@@ -52,6 +59,9 @@ jobs:
         with:
           path: ${{ env.pythonLocation }}
           key: test-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'setup.*') }}
+      - name: install dependencies on Linux
+        if: contains(matrix.os, 'ubuntu')
+        run: sudo apt install libboost-all-dev
       - name: install dependencies
         if: steps.cache.outputs.cache-hit != 'true'
         run: pip install ".[testing]"
