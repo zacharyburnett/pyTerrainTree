@@ -1,10 +1,9 @@
-from typing import List
-
 from libcpp cimport bool as c_bool
+from libcpp.map cimport map as c_map
+from libcpp.pair cimport pair
+from libcpp.set cimport set as c_set
 from libcpp.string cimport string
 from libcpp.vector cimport vector as vector
-from libcpp.map cimport map as c_map
-from libcpp.set cimport set as c_set
 
 
 cdef extern from "basic_types/basic_wrappers.h":
@@ -12,6 +11,16 @@ cdef extern from "basic_types/basic_wrappers.h":
 
     ctypedef int itype
     ctypedef vector[int] ivect
+    ctypedef c_set[int] iset
+    
+    ctypedef ivect VT
+    ctypedef iset VV
+    ctypedef ivect VV_vec
+    ctypedef vector[VT] leaf_VT
+    ctypedef vector[VV] leaf_VV
+    
+    ctypedef pair[itype, itype] ET
+    ctypedef c_map[ivect, ET] leaf_ET
 
     ctypedef double coord_type
     ctypedef vector[double] dvect
@@ -51,10 +60,10 @@ cdef extern from "basic_types/box.h":
         # Box(Point& min, Point& max) except +
 
         Point& get_min()
-        set_min(coord_type x, coord_type y)
+        void set_min(coord_type x, coord_type y)
 
         Point& get_max()
-        set_max(coord_type x, coord_type y)
+        void set_max(coord_type x, coord_type y)
 
 
 cdef extern from "basic_types/vertex.h":
@@ -66,14 +75,14 @@ cdef extern from "basic_types/vertex.h":
 
         coord_type get_z()
         coord_type get_c(int pos)
-        set_c(int pos, coord_type c)
+        void set_c(int pos, coord_type c)
 
         coord_type norm(Vertex& v)
         coord_type scalar_product(Vertex& v1, Vertex& v2)
 
         int get_fields_num()
         coord_type get_field(int pos)
-        add_field(coord_type f)
+        void add_field(coord_type f)
 
 
 cdef extern from "basic_types/triangle.h":
@@ -82,11 +91,11 @@ cdef extern from "basic_types/triangle.h":
         # Triangle(Triangle& orig) except +
         Triangle(ivect& v) except +
 
-        set(itype v1, itype v2, itype v3)
+        void set(itype v1, itype v2, itype v3)
 
         itype TV(int pos)
-        setTV(int pos, itype newId)
-        TE(int pos, vector[int]& e)
+        void setTV(int pos, itype newId)
+        void TE(int pos, vector[int]& e)
 
         int vertices_num()
         c_bool has_vertex(itype v_id)
@@ -100,7 +109,7 @@ cdef extern from "basic_types/triangle.h":
 
         c_bool has_simplex(ivect & s)
 
-        convert_to_vec(ivect & t)
+        void convert_to_vec(ivect & t)
 
 
 cdef extern from "terrain_trees/node_v.h":
@@ -111,10 +120,17 @@ cdef extern from "terrain_trees/node_v.h":
         int get_v_end()
 
         void get_VT(vector[vector[int]] & all_vt, Mesh & mesh)
+        void get_VV(leaf_VV & all_vv, Mesh& mesh)
+        void get_VV_VT(leaf_VV & all_vv, leaf_VT & all_vt, Mesh& mesh)
+        void get_ET(leaf_ET & ets, Mesh & mesh)
+        
         Node_V * get_son(int)
 
         c_bool is_leaf()
         c_bool indexes_vertices()
+
+        utype get_real_v_array_size()
+        utype get_v_array_size()
 
 
 cdef extern from "basic_types/mesh.h":
@@ -126,17 +142,17 @@ cdef extern from "basic_types/mesh.h":
 
         utype get_vertices_num()
         Vertex& get_vertex(itype id)
-        add_vertex(Vertex& v)
-        remove_vertex(itype v_id)
-        vertices_swap(int v_id1, int v_id2)
+        void add_vertex(Vertex& v)
+        void remove_vertex(itype v_id)
+        void vertices_swap(int v_id1, int v_id2)
         c_bool is_vertex_removed(itype v)
         c_bool is_vertex_removed(Vertex& v)
 
         utype get_triangles_num()
         Triangle& get_triangle(itype id)
-        add_triangle(Triangle& t)
-        remove_triangle(itype t)
-        triangles_swap(int t_id1, int t_id2)
+        void add_triangle(Triangle& t)
+        void remove_triangle(itype t)
+        void triangles_swap(int t_id1, int t_id2)
         c_bool is_triangle_removed(itype t)
         c_bool is_triangle_removed(Triangle& t)
 

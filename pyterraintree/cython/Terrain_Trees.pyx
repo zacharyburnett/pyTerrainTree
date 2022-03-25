@@ -2,7 +2,7 @@
 from os import PathLike
 from typing import List
 
-from cpython.object cimport Py_LT, Py_LE, Py_EQ, Py_GE, Py_GT, Py_NE
+from cpython.object cimport Py_EQ, Py_GE, Py_GT, Py_LE, Py_LT, Py_NE
 from cython.operator cimport dereference
 from libcpp cimport bool as c_bool
 from libcpp.vector cimport vector
@@ -70,9 +70,7 @@ cdef class Fields:
         return self.vertex._c_vertex.get_field(position)
 
     def append(self, c_Terrain_Trees.coord_type value):
-        # TODO raises compiler error - void value not ignored as it ought to be
-        raise NotImplementedError()
-        # self.vertex._c_vertex.add_field(<c_Terrain_Trees.coord_type>value)
+        self.vertex._c_vertex.add_field(<c_Terrain_Trees.coord_type> value)
 
     def __len__(self) -> int:
         return self.vertex._c_vertex.get_fields_num()
@@ -98,17 +96,13 @@ cdef class Vertices:
         return vertex
 
     def append(self, Vertex vertex):
-        # TODO raises compiler error - void value not ignored as it ought to be
-        raise NotImplementedError()
-        # self.mesh._c_mesh.add_vertex(<c_Terrain_Trees.Vertex>vertex._c_vertex)
+        self.mesh._c_mesh.add_vertex(<c_Terrain_Trees.Vertex*> vertex._c_vertex)
 
     def __delitem__(self, c_Terrain_Trees.itype position):
-        # TODO raises compiler error - void value not ignored as it ought to be
-        raise NotImplementedError()
-        # if not self.mesh._c_mesh.is_vertex_removed(position):
-        #     self.mesh._c_mesh.remove_vertex(position)
-        # else:
-        #     raise KeyError(f'no vertex exists at position {position}')
+        if not self.mesh._c_mesh.is_vertex_removed(position):
+            self.mesh._c_mesh.remove_vertex(position)
+        else:
+            raise KeyError(f'no vertex exists at position {position}')
 
     def __len__(self) -> int:
         return self.mesh._c_mesh.get_vertices_num()
@@ -123,11 +117,9 @@ cdef class Triangle:
         return self._c_triangle.TV(position)
 
     def edge(self, int position) -> List[int]:
-        # TODO raises compiler error - void value not ignored as it ought to be
-        raise NotImplementedError()
-        # cdef vector[int] edge
-        # self._c_triangle.TE(position, edge)
-        # return edge
+        cdef vector[int] edge
+        self._c_triangle.TE(position, edge)
+        return edge
 
     def __richcmp__(self, Triangle other, int operation):
         cdef c_Terrain_Trees.Triangle this_triangle = <c_Terrain_Trees.Triangle> self._c_triangle
@@ -152,23 +144,20 @@ cdef class Triangles:
         return triangle
 
     def append(self, Triangle triangle):
-        # TODO raises compiler error - void value not ignored as it ought to be
-        raise NotImplementedError()
-        # self.mesh._c_mesh.add_triangle(<c_Terrain_Trees.Triangle> triangle._c_triangle)
+        self.mesh._c_mesh.add_triangle(<c_Terrain_Trees.Triangle*> triangle._c_triangle)
 
     def __delitem__(self, c_Terrain_Trees.itype position):
-        # TODO raises compiler error - void value not ignored as it ought to be
-        raise NotImplementedError()
-        # if not self.mesh._c_mesh.is_triangle_removed(position):
-        #     self.mesh._c_mesh.remove_triangle(position)
-        # else:
-        #     raise KeyError(f'no triangle exists at position {position}')
+        if not self.mesh._c_mesh.is_triangle_removed(position):
+            self.mesh._c_mesh.remove_triangle(position)
+        else:
+            raise KeyError(f'no triangle exists at position {position}')
 
     def __len__(self) -> int:
         return self.mesh._c_mesh.get_triangles_num()
 
 cdef class Node_V:
     cdef c_Terrain_Trees.Node_V _c_node_v
+    cdef Vertices vertices
 
     def __cinit__(self):
         self._c_node_v = dereference(new c_Terrain_Trees.Node_V())
@@ -206,11 +195,13 @@ cdef c_Terrain_Trees.Reader * _c_reader
 
 cdef class Mesh:
     cdef c_Terrain_Trees.Mesh * _c_mesh
+    cpdef Vertices vertices
+    cpdef Triangles triangles
 
     def __cinit__(self):
         self._c_mesh = new c_Terrain_Trees.Mesh()
         self.vertices = Vertices(self)
-        self.triangle = Triangles(self)
+        self.triangles = Triangles(self)
 
     @classmethod
     def from_file(cls, str path: PathLike):
@@ -220,17 +211,19 @@ cdef class Mesh:
 
 cdef class PRT_Tree:
     cdef c_Terrain_Trees.PRT_Tree _c_tree
+    cpdef Mesh mesh
 
     def __cinit__(self, int vertices_per_leaf, int division_type, build: bool = True):
         self._c_tree = dereference(new c_Terrain_Trees.PRT_Tree(vertices_per_leaf, division_type))
         if build:
             self._c_tree.build_tree()
+        self.mesh = Mesh()
+        self.mesh._c_mesh = &self._c_tree.get_mesh()
 
     @classmethod
     def from_file(cls, str path: PathLike, int vertices_per_leaf, int division_type) -> PRT_Tree:
         cdef PRT_Tree tree = PRT_Tree(vertices_per_leaf, division_type, build=False)
-        cdef c_Terrain_Trees.Mesh mesh = <c_Terrain_Trees.Mesh> tree._c_tree.get_mesh()
-        _c_reader.read_mesh(mesh, bytes(path, encoding='utf8'))
+        _c_reader.read_mesh(dereference(tree.mesh._c_mesh), bytes(path, encoding='utf8'))
         tree._c_tree.build_tree()
         return tree
 
