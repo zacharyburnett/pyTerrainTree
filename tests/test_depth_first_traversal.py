@@ -25,6 +25,6 @@ if __name__ == '__main__':
     # tree.leaf_blocks
     tree.reindex(False, False)
 
-    depth_first_traversal(tree.root, tree.mesh)
+    depth_first_traversal(tree.root, tree._c_mesh)
 
     print('done')

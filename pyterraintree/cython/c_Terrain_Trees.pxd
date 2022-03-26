@@ -70,6 +70,7 @@ cdef extern from "basic_types/vertex.h":
     cdef cppclass Vertex:
         Vertex() except +
         # Vertex(Vertex& orig) except +
+        Vertex(coord_type x, coord_type y) except +
         Vertex(coord_type x, coord_type y, coord_type field) except +
         Vertex(coord_type x, coord_type y, dvect & fields) except +
 
@@ -90,6 +91,7 @@ cdef extern from "basic_types/triangle.h":
         Triangle() except +
         # Triangle(Triangle& orig) except +
         Triangle(ivect& v) except +
+        Triangle(itype v1, itype v2, itype v3) except +
 
         void set(itype v1, itype v2, itype v3)
 

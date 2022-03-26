@@ -1,4 +1,5 @@
 import pytest
+
 from Terrain_Trees import Point, Triangle, Vertex
 
 
@@ -23,18 +24,45 @@ def test_point():
 
 
 def test_vertex():
-    vertex_1 = Vertex(0, 1, [])
-    vertex_2 = Vertex(0, 1, [3.2])
-    vertex_3 = Vertex(1, 4, [1.1, 1.2])
+    vertex_1 = Vertex(0, 0)
+    vertex_2 = Vertex(0, 1, [])
+    vertex_3 = Vertex(0, 1, [3.2])
+    vertex_4 = Vertex(1, 4, [1.1, 1.2])
 
     assert vertex_1.coords == [0, 0]
     assert vertex_2.coords == [0, 1]
-    assert vertex_3.coords == [1, 4]
+    assert vertex_3.coords == [0, 1]
+    assert vertex_4.coords == [1, 4]
 
-    assert vertex_1.fields == []
-    assert vertex_2.fields == [3.2]
-    assert vertex_3.fields == [1.1, 1.2]
+    assert vertex_1.fields == [0]
+    assert vertex_2.fields == [0]
+    assert vertex_3.fields == [3.2]
+    assert vertex_4.fields == [1.1, 1.2]
 
 
 def test_triangle():
-    triangle_1 = Triangle()
+    triangle_1 = Triangle(0, 1, 2)
+    triangle_2 = Triangle(3, 1, 2)
+    triangle_3 = Triangle(2, 1, 0)
+    triangle_4 = Triangle(0, 1, 2)
+
+    assert triangle_1 != triangle_2
+    assert triangle_1 == triangle_3
+    assert triangle_1 == triangle_4
+
+    assert len(triangle_1) == 3
+    assert len(triangle_2) == 3
+    assert len(triangle_3) == 3
+    assert len(triangle_4) == 3
+
+    assert triangle_1.vertex(0) == 0
+    assert triangle_3.vertex(0) == 2
+
+    assert triangle_1.edge(0) == [1, 2]
+    assert triangle_3.edge(0) == [0, 1]
+
+    assert 1 in triangle_1
+    assert 3 not in triangle_1
+    assert [1, 2] in triangle_1
+    assert [2, 1] in triangle_1
+    assert [3, 1] not in triangle_1
