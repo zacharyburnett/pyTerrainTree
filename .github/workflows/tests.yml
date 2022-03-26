@@ -44,7 +44,7 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
         run: pip install .
   test:
-    needs: lint
+    needs: [lint, build_extension]
     name: test
     runs-on: ${{ matrix.os }}
     strategy:
