@@ -1,5 +1,4 @@
 import pytest
-
 from Terrain_Trees import Point, Triangle, Vertex
 
 
@@ -50,16 +49,21 @@ def test_triangle():
     assert triangle_1 == triangle_3
     assert triangle_1 == triangle_4
 
-    assert len(triangle_1) == 3
-    assert len(triangle_2) == 3
-    assert len(triangle_3) == 3
-    assert len(triangle_4) == 3
+    assert len(triangle_1.vertices) == 3
+    assert len(triangle_2.vertices) == 3
+    assert len(triangle_3.vertices) == 3
+    assert len(triangle_4.vertices) == 3
 
-    assert triangle_1.vertex(0) == 0
-    assert triangle_3.vertex(0) == 2
+    assert triangle_1.vertices[0] == 0
+    assert triangle_3.vertices[0] == 2
 
-    assert triangle_1.edge(0) == [1, 2]
-    assert triangle_3.edge(0) == [0, 1]
+    assert len(triangle_1.edges) == 3
+    assert len(triangle_2.edges) == 3
+    assert len(triangle_3.edges) == 3
+    assert len(triangle_4.edges) == 3
+
+    assert triangle_1.edges[0] == [1, 2]
+    assert triangle_3.edges[0] == [0, 1]
 
     assert 1 in triangle_1
     assert 3 not in triangle_1

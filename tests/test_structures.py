@@ -1,4 +1,5 @@
 from Terrain_Trees import Mesh, Node_V, PRT_Tree
+
 from tests import INPUT_DIRECTORY
 
 
@@ -12,21 +13,28 @@ def test_mesh():
     assert len(mesh_1.triangles) == 0
     assert len(mesh_2.triangles) == 63851
 
-    assert mesh_2.vertices[0].coords == [0, 0]
     assert mesh_2.vertices[1].coords == [512, 0]
+    assert mesh_2.vertices[5].coords == [0, 256]
 
-    assert mesh_2.triangles[0].edges == [512, 0]
-    assert mesh_2.vertices[1].coords == [512, 0]
-
-    print('done')
-
-
-def test_node_v():
-    node_v_1 = Node_V()
+    assert list(mesh_2.triangles[15].edges) == [[54, 58], [54, 90], [58, 90]]
+    assert list(mesh_2.triangles[6].edges) == [[20, 60], [60, 92], [20, 92]]
 
 
 def test_pr_tree():
     tree_1 = PRT_Tree(1, 4)
     tree_2 = PRT_Tree.from_file(str(INPUT_DIRECTORY / 'devil_0.tri'), 1, 4)
 
-    print('done')
+    assert tree_1.root.is_leaf
+    assert not tree_1.root.is_indexing_vertices
+
+    assert not tree_2.root.is_leaf
+    assert not tree_2.root.is_indexing_vertices
+    assert tree_2.root.v_start == 1
+    assert tree_2.root.v_end == 4
+
+    assert isinstance(tree_2.root.child(0), Node_V)
+
+    assert tree_2.leaf_blocks == 0
+
+    assert len(tree_2.mesh.vertices) == 0
+    assert len(tree_2.mesh.triangles) == 0

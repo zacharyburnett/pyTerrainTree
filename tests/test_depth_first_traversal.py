@@ -1,30 +1,31 @@
-import Terrain_Trees
+from functools import partial
+from typing import Callable
+
+from Terrain_Trees import Mesh, Node_V, PRT_Tree
+
+from tests import INPUT_DIRECTORY
 
 
-def depth_first_traversal(root: Terrain_Trees.Node_V, mesh: Terrain_Trees.Mesh):
-    if root.is_leaf:
-        if root.is_indexing_vertices:
-            print(root.v_start)
-            print(root.v_end)
-            for vid in range(root.v_start, root.v_end):
-                vertex = mesh.vertex(vid)
-                for index in range(0, 3):
-                    print(vertex.coordinate(index))
-            vt = root.vertex_triangle_relations(mesh)
-            print(vt)
+def depth_first_traversal(callable: Callable, node: Node_V, mesh: Mesh):
+    if node.is_leaf:
+        if node.is_indexing_vertices:
+            callable(node)
     else:
-        for i in range(0, 4):
-            child = root.child(i)
+        for child_index in range(0, 4):
+            child = node.child(child_index)
             if child is not None:
-                depth_first_traversal(child, mesh)
+                depth_first_traversal(callable, child, mesh)
 
 
-if __name__ == '__main__':
-    tree = Terrain_Trees.PRT_Tree.from_file('data/devil_0.tri', 1, 4)
+def test_depth_first_traversal():
+    tree = PRT_Tree.from_file(str(INPUT_DIRECTORY / 'devil_0.tri'), 1, 4)
 
-    # tree.leaf_blocks
     tree.reindex(False, False)
 
-    depth_first_traversal(tree.root, tree._c_mesh)
+    vertices = []
+    callable = lambda vertices, node: vertices.extend(range(node.v_start, node.v_end))
+    callable = partial(callable, vertices)
 
-    print('done')
+    depth_first_traversal(callable, tree.root, tree.mesh)
+
+    assert len(vertices) == 32100
