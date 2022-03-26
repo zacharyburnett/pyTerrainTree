@@ -6,9 +6,6 @@ jobs:
   lint:
     name: lint
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [ '3.x' ]
     steps:
       - name: clone repository
         uses: actions/checkout@v2
@@ -16,26 +13,36 @@ jobs:
           submodules: recursive
       - name: install Python
         uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: load cached Python installation
-        id: cache
-        uses: actions/cache@v2
-        with:
-          path: ${{ env.pythonLocation }}
-          key: lint-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'setup.*') }}
-      - name: install dependencies on Linux
-        if: runner.os == 'Linux'
-        run: sudo apt install libboost-all-dev libeigen3-dev
-      - name: install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: pip install ".[development]"
+      - name: install flake8
+        run: pip install flake8
       - name: lint with flake8
         run: |
           # stop the build if there are Python syntax errors or undefined names
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+  build_extension:
+    name: build extension
+    runs-on: ubuntu-latest
+    steps:
+      - name: clone repository
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: install Python
+        uses: actions/setup-python@v2
+      - name: load cached Python installation
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.pythonLocation }}
+          key: build-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'setup.*') }}-${{ github.sha }}
+      - name: install dependencies on Linux
+        if: runner.os == 'Linux'
+        run: sudo apt install libboost-all-dev libeigen3-dev
+      - name: install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: pip install .
   test:
     needs: lint
     name: test
@@ -55,22 +62,20 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: load cached Python installation
         id: cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${{ env.pythonLocation }}
-          key: test-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'setup.*') }}
-      - name: install dependencies on Linux
-        if: runner.os == 'Linux'
-        run: sudo apt install libboost-all-dev libeigen3-dev
+          key: lint-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'setup.*') }}-${{ github.sha }}
       - name: install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: pip install ".[testing]"
+        run: pip install pytest pytest-xdist
       - name: run tests
         if: matrix.python-version != '3.x' || runner.os != 'Linux'
         run: pytest --numprocesses auto
       - name: run tests with coverage
         if: matrix.python-version == '3.x' && runner.os == 'Linux'
-        run: pytest --numprocesses auto --cov . --cov-report xml:coverage.xml
+        run: |
+          pip install pytest-cov
+          pytest --numprocesses auto --cov . --cov-report xml:coverage.xml
       - name: upload coverage to Codecov
         if: matrix.python-version == '3.x' && runner.os == 'Linux'
         uses: codecov/codecov-action@v2.1.0
