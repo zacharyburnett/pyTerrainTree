@@ -20,9 +20,9 @@ cdef class Point:
     def __copy__(self) -> 'Point':
         return self.__class__(*self.coords)
 
-    property coords:
-        def __get__(self) -> List[float]:
-            return [self._c_point.get_c(index) for index in range(self._c_point.get_dimension())]
+    @property
+    def coords(self) -> List[float]:
+        return [self._c_point.get_c(index) for index in range(self._c_point.get_dimension())]
 
     def distance(self, Point other) -> float:
         cdef c_Terrain_Trees.Point this_point = <c_Terrain_Trees.Point> self._c_point
@@ -48,41 +48,45 @@ cdef class Point:
             raise NotImplementedError(
                 f'comparison operation {operation} not implemented for class {self.__class__.__name__}')
 
-    def __add__(self, Point other):
-        raise NotImplementedError()
-        # return self._c_point.add(other._c_point)
-
-    def __sub__(self, Point other):
-        raise NotImplementedError()
-        # return self._c_point.sub(other._c_point)
-
-    def __mul__(self, c_Terrain_Trees.coord_type factor):
-        raise NotImplementedError()
-        # return self._c_point.mul(factor)
-
-cdef class Fields:
-    cdef Vertex vertex
-
-    def __cinit__(self, Vertex vertex):
-        self.vertex = vertex
-
-    def __getitem__(self, int position) -> c_Terrain_Trees.coord_type:
-        return self.vertex._c_vertex.get_field(position)
-
-    def append(self, c_Terrain_Trees.coord_type value):
-        self.vertex._c_vertex.add_field(<c_Terrain_Trees.coord_type> value)
-
-    def __len__(self) -> int:
-        return self.vertex._c_vertex.get_fields_num()
+    # def __add__(self, Point other):
+    #     cdef c_Terrain_Trees.Point other_point = other._c_point
+    #     return self._c_point.add(<c_Terrain_Trees.Point> other_point)
+    #
+    # def __sub__(self, Point other):
+    #     cdef c_Terrain_Trees.Point other_point = other._c_point
+    #     return self._c_point.sub(<c_Terrain_Trees.Point> other_point)
+    #
+    # def __mul__(self, c_Terrain_Trees.coord_type factor):
+    #     return self._c_point.mul(<c_Terrain_Trees.coord_type> factor)
 
 cdef class Vertex:
     cdef c_Terrain_Trees.Vertex _c_vertex
 
-    def __cinit__(self):
-        self._c_vertex = c_Terrain_Trees.Vertex()
+    def __cinit__(self, c_Terrain_Trees.coord_type x, c_Terrain_Trees.coord_type y, c_Terrain_Trees.dvect fields):
+        if len(fields) == 0:
+            self._c_vertex = c_Terrain_Trees.Vertex(x, y)
+        else:
+            self._c_vertex = c_Terrain_Trees.Vertex(x, y, fields)
 
-    def coordinate(self, int position) -> float:
-        return self._c_vertex.get_c(position)
+    @property
+    def coords(self) -> List[float]:
+        return [self._c_vertex.get_c(index) for index in range(2)]
+
+    def __getitem__(self, int position) -> c_Terrain_Trees.coord_type:
+        return self._c_vertex.get_field(position)
+
+    def append(self, c_Terrain_Trees.coord_type value):
+        self._c_vertex.add_field(<c_Terrain_Trees.coord_type> value)
+
+    def __len__(self) -> int:
+        return self._c_vertex.get_fields_num()
+
+    @property
+    def fields(self) -> List[float]:
+        return list(self)
+
+    def __iter__(self):
+        yield from (self[index] for index in range(len(self)))
 
 cdef class Vertices:
     cdef Mesh mesh
@@ -96,7 +100,7 @@ cdef class Vertices:
         return vertex
 
     def append(self, Vertex vertex):
-        self.mesh._c_mesh.add_vertex(<c_Terrain_Trees.Vertex*> vertex._c_vertex)
+        self.mesh._c_mesh.add_vertex(vertex._c_vertex)
 
     def __delitem__(self, c_Terrain_Trees.itype position):
         if not self.mesh._c_mesh.is_vertex_removed(position):
@@ -144,7 +148,7 @@ cdef class Triangles:
         return triangle
 
     def append(self, Triangle triangle):
-        self.mesh._c_mesh.add_triangle(<c_Terrain_Trees.Triangle*> triangle._c_triangle)
+        self.mesh._c_mesh.add_triangle(triangle._c_triangle)
 
     def __delitem__(self, c_Terrain_Trees.itype position):
         if not self.mesh._c_mesh.is_triangle_removed(position):
@@ -162,22 +166,22 @@ cdef class Node_V:
     def __cinit__(self):
         self._c_node_v = dereference(new c_Terrain_Trees.Node_V())
 
-    property v_start:
-        def __get__(self) -> int:
-            return self._c_node_v.get_v_start()
+    @property
+    def v_start(self) -> int:
+        return self._c_node_v.get_v_start()
 
-    property v_end:
-        def __get__(self) -> int:
-            return self._c_node_v.get_v_end()
+    @property
+    def v_end(self) -> int:
+        return self._c_node_v.get_v_end()
 
     def vertex_triangle_relations(self, Mesh mesh) -> List[List[int]]:
         cdef vector[vector[int]] vertex_triangle_relations
         self._c_node_v.get_VT(vertex_triangle_relations, dereference(mesh._c_mesh))
         return vertex_triangle_relations
 
-    property is_leaf:
-        def __get__(self) -> bool:
-            return self._c_node_v.is_leaf()
+    @property
+    def is_leaf(self) -> bool:
+        return self._c_node_v.is_leaf()
 
     def child(self, int index) -> Node_V:
         cdef Node_V node_v = Node_V()
@@ -187,16 +191,16 @@ cdef class Node_V:
             node_v._c_node_v = dereference(self._c_node_v.get_son(index))
             return node_v
 
-    property is_indexing_vertices:
-        def __get__(self) -> bool:
-            return self._c_node_v.indexes_vertices()
+    @property
+    def is_indexing_vertices(self) -> bool:
+        return self._c_node_v.indexes_vertices()
 
 cdef c_Terrain_Trees.Reader * _c_reader
 
 cdef class Mesh:
     cdef c_Terrain_Trees.Mesh * _c_mesh
-    cpdef Vertices vertices
-    cpdef Triangles triangles
+    cdef Vertices vertices
+    cdef Triangles triangles
 
     def __cinit__(self):
         self._c_mesh = new c_Terrain_Trees.Mesh()
@@ -211,7 +215,7 @@ cdef class Mesh:
 
 cdef class PRT_Tree:
     cdef c_Terrain_Trees.PRT_Tree _c_tree
-    cpdef Mesh mesh
+    cdef Mesh mesh
 
     def __cinit__(self, int vertices_per_leaf, int division_type, build: bool = True):
         self._c_tree = dereference(new c_Terrain_Trees.PRT_Tree(vertices_per_leaf, division_type))
@@ -227,21 +231,21 @@ cdef class PRT_Tree:
         tree._c_tree.build_tree()
         return tree
 
-    property mesh:
-        def __get__(self) -> Mesh:
-            mesh = Mesh()
-            mesh._c_mesh = &self._c_tree.get_mesh()
-            return mesh
+    @property
+    def mesh(self) -> Mesh:
+        mesh = Mesh()
+        mesh._c_mesh = &self._c_tree.get_mesh()
+        return mesh
 
-    property root:
-        def __get__(self) -> Node_V:
-            node = Node_V()
-            node._c_node_v = self._c_tree.get_root()
-            return node
+    @property
+    def root(self) -> Node_V:
+        node = Node_V()
+        node._c_node_v = self._c_tree.get_root()
+        return node
 
-    property leaf_blocks:
-        def __get__(self) -> int:
-            return self._c_tree.get_leaves_number()
+    @property
+    def leaf_blocks(self) -> int:
+        return self._c_tree.get_leaves_number()
 
     def reindex(self, c_bool save_vertex_indices, c_bool save_triangle_indices):
         cdef c_Terrain_Trees.Reindexer _c_reindexer = c_Terrain_Trees.Reindexer()
