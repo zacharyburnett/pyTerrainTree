@@ -66,6 +66,9 @@ jobs:
         with:
           path: ${{ env.pythonLocation }}
           key: lint-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'setup.*') }}-${{ github.sha }}
+      - name: install dependencies on Linux
+        if: runner.os == 'Linux'
+        run: sudo apt install libboost-all-dev libeigen3-dev
       - name: build
         if: steps.cache.outputs.cache-hit != 'true'
         run: pip install .
