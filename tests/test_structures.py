@@ -1,5 +1,4 @@
-from Terrain_Trees import Mesh, Node_V, PRT_Tree
-
+from pyterraintree import Mesh, Node_V, PointRegionTree
 from tests import INPUT_DIRECTORY
 
 
@@ -21,8 +20,8 @@ def test_mesh():
 
 
 def test_pr_tree():
-    tree_1 = PRT_Tree(1, 4)
-    tree_2 = PRT_Tree.from_file(str(INPUT_DIRECTORY / 'devil_0.tri'), 1, 4)
+    tree_1 = PointRegionTree(1, 4)
+    tree_2 = PointRegionTree.from_file(str(INPUT_DIRECTORY / 'devil_0.tri'), 1, 4)
 
     assert tree_1.root.is_leaf
     assert not tree_1.root.is_indexing_vertices

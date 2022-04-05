@@ -1,5 +1,6 @@
 import pytest
-from Terrain_Trees import Point, Triangle, Vertex
+
+from pyterraintree import Point, Triangle, Vertex
 
 
 def test_point():

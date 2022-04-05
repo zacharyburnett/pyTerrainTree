@@ -2,18 +2,16 @@
 from os import PathLike
 from typing import List
 
+cimport c_Terrain_Trees
 from cpython.object cimport Py_EQ, Py_GE, Py_GT, Py_LE, Py_LT, Py_NE
 from cython.operator cimport dereference
-from libcpp cimport bool as c_bool
 from libcpp.vector cimport vector
-
-cimport c_Terrain_Trees
 
 
 cdef class Point:
     cdef c_Terrain_Trees.Point* _c_point
 
-    def __cinit__(self, c_Terrain_Trees.coord_type x, c_Terrain_Trees.coord_type y):
+    def __cinit__(self, x: c_Terrain_Trees.coord_type, y: c_Terrain_Trees.coord_type):
         self._c_point = new c_Terrain_Trees.Point()
         self._c_point.set(x, y)
 
@@ -24,10 +22,10 @@ cdef class Point:
     def coords(self) -> List[float]:
         return [self._c_point.get_c(index) for index in range(self._c_point.get_dimension())]
 
-    cpdef float distance(self, Point other):
+    cpdef float distance(self, other: Point):
         return self._c_point.distance(dereference(other._c_point))
 
-    def __richcmp__(self, Point other, int operation) -> bool:
+    def __richcmp__(self, other: Point, operation: int) -> bool:
         cdef c_Terrain_Trees.Point this_point = dereference(self._c_point)
         cdef c_Terrain_Trees.Point other_point = dereference(other._c_point)
         if operation == Py_LT:
@@ -46,21 +44,21 @@ cdef class Point:
             raise NotImplementedError(
                 f'comparison operation {operation} not implemented for class {self.__class__.__name__}')
 
-    def __add__(self, Point other) -> Point:
+    def __add__(self, other: Point) -> Point:
         # TODO fix compiler error - Cannot convert 'Point' to Python object
         # cdef c_Terrain_Trees.Point point = self._c_point.add(dereference(other._c_point))
         # cdef Point output_point = Point(*(point.get_c(index) for index in range(point.get_dimension())))
         # return output_point
         raise NotImplementedError()
 
-    def __sub__(self, Point other) -> Point:
+    def __sub__(self, other: Point) -> Point:
         # TODO fix compiler error - Cannot convert 'Point' to Python object
         # cdef c_Terrain_Trees.Point point = self._c_point.sub(dereference(other._c_point))
         # cdef Point output_point = Point(*(point.get_c(index) for index in range(point.get_dimension())))
         # return output_point
         raise NotImplementedError()
 
-    def __mul__(self, c_Terrain_Trees.coord_type factor) -> Point:
+    def __mul__(self, factor: c_Terrain_Trees.coord_type) -> Point:
         # TODO fix compiler error - Cannot convert 'Point' to Python object
         # cdef c_Terrain_Trees.Point point = self._c_point.mul(factor)
         # cdef Point output_point = Point(*(point.get_c(index) for index in range(point.get_dimension())))
@@ -71,7 +69,7 @@ cdef class Vertex:
     cdef c_Terrain_Trees.Vertex* _c_vertex
 
     def __cinit__(self, x: c_Terrain_Trees.coord_type, y: c_Terrain_Trees.coord_type,
-                   fields: c_Terrain_Trees.dvect = ()):
+                  fields: c_Terrain_Trees.dvect = ()):
         if x is None or y is None:
             self._c_vertex = new c_Terrain_Trees.Vertex()
         elif len(fields) == 0:
@@ -85,10 +83,10 @@ cdef class Vertex:
     def coords(self) -> List[float]:
         return [self._c_vertex.get_c(index) for index in range(2)]
 
-    def __getitem__(self, int position) -> float:
+    def __getitem__(self, position: int) -> float:
         return self._c_vertex.get_field(position)
 
-    cpdef append(self, c_Terrain_Trees.coord_type value):
+    cpdef append(self, value: c_Terrain_Trees.coord_type):
         self._c_vertex.add_field(value)
 
     def __len__(self) -> int:
@@ -101,16 +99,16 @@ cdef class Vertex:
     def __iter__(self):
         yield from (self[index] for index in range(len(self)))
 
-    def __str__(self) ->  str:
+    def __str__(self) -> str:
         return f'{self.__class__.__name__} - {self.coords} - {", ".join(str(value) for value in self)}'
 
 cdef class TriangleVertices:
     cdef c_Terrain_Trees.Triangle* _c_triangle
 
-    def __cinit__(self, Triangle triangle):
+    def __cinit__(self, triangle: Triangle):
         self._c_triangle = triangle._c_triangle
 
-    def __getitem__(self, int position) -> int:
+    def __getitem__(self, position: int) -> int:
         return self._c_triangle.TV(position)
 
     def __len__(self) -> int:
@@ -126,10 +124,10 @@ cdef class TriangleVertices:
 cdef class TriangleEdges:
     cdef c_Terrain_Trees.Triangle* _c_triangle
 
-    def __cinit__(self, Triangle triangle):
+    def __cinit__(self, triangle: Triangle):
         self._c_triangle = triangle._c_triangle
 
-    def __getitem__(self, int position) -> vector[int]:
+    def __getitem__(self, position: int) -> vector[int]:
         cdef vector[int] edge
         self._c_triangle.TE(position, edge)
         return edge
@@ -151,7 +149,7 @@ cdef class Triangle:
     cdef TriangleEdges __edges
 
     def __cinit__(self, vertex_1: c_Terrain_Trees.itype, vertex_2: c_Terrain_Trees.itype,
-                   vertex_3: c_Terrain_Trees.itype):
+                  vertex_3: c_Terrain_Trees.itype):
         if vertex_1 is None or vertex_2 is None or vertex_3 is None:
             self._c_triangle = new c_Terrain_Trees.Triangle()
         else:
@@ -168,7 +166,7 @@ cdef class Triangle:
     def edges(self) -> TriangleEdges:
         return self.__edges
 
-    def __richcmp__(self, Triangle other, int operation) -> bool:
+    def __richcmp__(self, other: Triangle, operation: int) -> bool:
         cdef c_Terrain_Trees.Triangle this_triangle = dereference(self._c_triangle)
         cdef c_Terrain_Trees.Triangle other_triangle = dereference(other._c_triangle)
         if operation == Py_EQ:
@@ -179,7 +177,7 @@ cdef class Triangle:
             raise NotImplementedError(
                 f'comparison operation {operation} not implemented for class {self.__class__.__name__}')
 
-    def __contains__(self, item) -> bool:
+    def __contains__(self, item: int) -> bool:
         if isinstance(item, int):
             return self._c_triangle.has_vertex(item)
         else:
@@ -208,7 +206,7 @@ cdef class Node_V:
     def is_leaf(self) -> bool:
         return self._c_node_v.is_leaf()
 
-    cpdef Node_V child(self, int index):
+    cpdef Node_V child(self, index: int):
         cdef Node_V node_v = Node_V()
         if self._c_node_v.get_son(index) is NULL:
             return None
@@ -228,14 +226,14 @@ cdef class MeshVertices:
     def __cinit__(self, Mesh mesh):
         self._c_mesh = mesh._c_mesh
 
-    def __getitem__(self, c_Terrain_Trees.itype position) -> Vertex:
+    def __getitem__(self, position: c_Terrain_Trees.itype) -> Vertex:
         cdef c_Terrain_Trees.Vertex vertex = self._c_mesh.get_vertex(position)
         return Vertex(*(vertex.get_c(index) for index in range(2)))
 
-    cpdef append(self, Vertex vertex):
+    cpdef append(self, vertex: Vertex):
         self._c_mesh.add_vertex(dereference(vertex._c_vertex))
 
-    def __delitem__(self, c_Terrain_Trees.itype position):
+    def __delitem__(self, position: c_Terrain_Trees.itype):
         if not self._c_mesh.is_vertex_removed(position):
             self._c_mesh.remove_vertex(position)
         else:
@@ -254,17 +252,17 @@ cdef class MeshVertices:
 cdef class MeshTriangles:
     cdef c_Terrain_Trees.Mesh* _c_mesh
 
-    def __cinit__(self, Mesh mesh):
+    def __cinit__(self, mesh: Mesh):
         self._c_mesh = mesh._c_mesh
 
-    def __getitem__(self, c_Terrain_Trees.itype position) -> Triangle:
+    def __getitem__(self, position: c_Terrain_Trees.itype) -> Triangle:
         cdef c_Terrain_Trees.Triangle triangle = self._c_mesh.get_triangle(position)
         return Triangle(*(triangle.TV(position) for position in range(triangle.vertices_num())))
 
-    cpdef append(self, Triangle triangle):
+    cpdef append(self, triangle: Triangle):
         self._c_mesh.add_triangle(dereference(triangle._c_triangle))
 
-    def __delitem__(self, c_Terrain_Trees.itype position):
+    def __delitem__(self, position: c_Terrain_Trees.itype):
         if not self._c_mesh.is_triangle_removed(position):
             self._c_mesh.remove_triangle(position)
         else:
@@ -291,9 +289,10 @@ cdef class Mesh:
         self.__triangles = MeshTriangles(self)
 
     @classmethod
-    def from_file(cls, str path: PathLike):
+    def from_file(cls, path: PathLike):
+        cdef bytes path_bytes = bytes(str(path), encoding='utf8')
         cdef Mesh instance = cls()
-        _c_reader.read_mesh(dereference(instance._c_mesh), bytes(path, encoding='utf8'))
+        _c_reader.read_mesh(dereference(instance._c_mesh), path_bytes)
         return instance
 
     @property
@@ -304,11 +303,11 @@ cdef class Mesh:
     def triangles(self) -> MeshTriangles:
         return self.__triangles
 
-cdef class PRT_Tree:
+cdef class PointRegionTree:
     cdef c_Terrain_Trees.PRT_Tree* _c_tree
     cdef Mesh __mesh
 
-    def __cinit__(self, int vertices_per_leaf, int division_type, build: bool = True):
+    def __cinit__(self, vertices_per_leaf: int, division_type: int, build: bool = True):
         self._c_tree = new c_Terrain_Trees.PRT_Tree(vertices_per_leaf, division_type)
         if build:
             self._c_tree.build_tree()
@@ -316,10 +315,11 @@ cdef class PRT_Tree:
         self.__mesh._c_mesh = &self._c_tree.get_mesh()
 
     @classmethod
-    def from_file(cls, str path: PathLike, int vertices_per_leaf, int division_type) -> PRT_Tree:
-        cdef PRT_Tree tree = PRT_Tree(vertices_per_leaf, division_type, build=False)
+    def from_file(cls, path: PathLike, vertices_per_leaf: int, int division_type) -> PointRegionTree:
+        cdef bytes path_bytes = bytes(str(path), encoding='utf8')
+        cdef PointRegionTree tree = PointRegionTree(vertices_per_leaf, division_type, build=False)
         cdef Mesh mesh = tree.mesh
-        _c_reader.read_mesh(dereference(mesh._c_mesh), bytes(path, encoding='utf8'))
+        _c_reader.read_mesh(dereference(mesh._c_mesh), path_bytes)
         tree._c_tree.build_tree()
         return tree
 
@@ -338,7 +338,7 @@ cdef class PRT_Tree:
     def leaf_blocks(self) -> int:
         return self._c_tree.get_leaves_number()
 
-    cpdef reindex(self, c_bool save_vertex_indices, c_bool save_triangle_indices):
+    cpdef reindex(self, save_vertex_indices: bool, save_triangle_indices: bool):
         cdef c_Terrain_Trees.Reindexer _c_reindexer = c_Terrain_Trees.Reindexer()
         cdef vector[int] original_vertex_indices
         cdef vector[int] original_triangle_indices

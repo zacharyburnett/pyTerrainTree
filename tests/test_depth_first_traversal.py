@@ -1,8 +1,7 @@
 from functools import partial
 from typing import Callable
 
-from Terrain_Trees import Mesh, Node_V, PRT_Tree
-
+from Terrain_Trees import Mesh, Node_V, PointRegionTree
 from tests import INPUT_DIRECTORY
 
 
@@ -18,7 +17,7 @@ def depth_first_traversal(callable: Callable, node: Node_V, mesh: Mesh):
 
 
 def test_depth_first_traversal():
-    tree = PRT_Tree.from_file(str(INPUT_DIRECTORY / 'devil_0.tri'), 1, 4)
+    tree = PointRegionTree.from_file(str(INPUT_DIRECTORY / 'devil_0.tri'), 1, 4)
 
     tree.reindex(False, False)
 
