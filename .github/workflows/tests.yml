@@ -52,6 +52,8 @@ jobs:
       - name: install Boost
         if: steps.cache.outputs.cache-hit != 'true'
         uses: MarkusJx/install-boost@v2.2.0
+        with:
+          boost_version: 1.78.0
       - name: install Eigen on Linux
         if: steps.cache.outputs.cache-hit != 'true' && matrix.os != 'ubuntu-latest'
         run: sudo apt install libeigen3-dev
