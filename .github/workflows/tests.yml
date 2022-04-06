@@ -52,7 +52,7 @@ jobs:
           key: build-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'setup.*') }}-${{ hashFiles('pyterraintree/cython/*', 'modules/*') }}
       - name: install dependencies on Linux
         if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'ubuntu-latest'
-        run: sudo apt install libeigen3-dev
+        run: sudo apt install libeigen3-dev libboost-all-dev
       - name: install dependencies on Windows
         if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
         run: choco install eigen
@@ -62,10 +62,11 @@ jobs:
         uses: MarkusJx/install-boost@v2.2.0
         with:
           boost_version: 1.78.0
+      - name: add BOOST_ROOT to PATH
+        if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
+        run: "PATH=${{ env.PATH }};${{ steps.boost.outputs.BOOST_ROOT }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: build extension
         if: steps.cache.outputs.cache-hit != 'true'
-        env:
-          PATH: ${{ env.PATH }};${{ steps.boost.outputs.BOOST_ROOT }}
         run: pip install .
       - name: install dependencies
         run: pip install pytest pytest-xdist
