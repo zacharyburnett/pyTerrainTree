@@ -12,13 +12,13 @@ cdef extern from "basic_types/basic_wrappers.h":
     ctypedef int itype
     ctypedef vector[int] ivect
     ctypedef c_set[int] iset
-    
+
     ctypedef ivect VT
     ctypedef iset VV
     ctypedef ivect VV_vec
     ctypedef vector[VT] leaf_VT
     ctypedef vector[VV] leaf_VV
-    
+
     ctypedef pair[itype, itype] ET
     ctypedef c_map[ivect, ET] leaf_ET
 
@@ -113,6 +113,15 @@ cdef extern from "basic_types/triangle.h":
 
         void convert_to_vec(ivect & t)
 
+cdef extern from "basic_types/explicit_triangle.h":
+    cdef cppclass Explicit_Triangle:
+        Explicit_Triangle() except +
+
+        Vertex& get_vertex(int pos)
+        void add_vertex(Vertex & v)
+
+        int vertices_num()
+
 
 cdef extern from "terrain_trees/node_v.h":
     cdef cppclass Node_V:
@@ -125,7 +134,7 @@ cdef extern from "terrain_trees/node_v.h":
         void get_VV(leaf_VV & all_vv, Mesh& mesh)
         void get_VV_VT(leaf_VV & all_vv, leaf_VT & all_vt, Mesh& mesh)
         void get_ET(leaf_ET & ets, Mesh & mesh)
-        
+
         Node_V * get_son(int)
 
         c_bool is_leaf()
@@ -167,7 +176,12 @@ cdef extern from "basic_types/soup.h":
         Soup() except +
         # Soup(Soup& orig) except +
 
-        Box get_domain()
+        Box& get_domain()
+
+        Explicit_Triangle& get_triangle(itype id)
+        void add_triangle(Explicit_Triangle& t)
+
+        itype get_triangles_num()
 
 
 cdef extern from "terrain_trees/prt_tree.h":
@@ -196,8 +210,11 @@ cdef extern from "terrain_trees/reindexer.h":
 
 cdef extern from "io/reader.h":
     cdef cppclass Reader:
-        @staticmethod
+        @ staticmethod
         c_bool read_mesh(Mesh& mesh, string path)
+
+        @ staticmethod
+        c_bool read_soup(Soup& soup, string path)
 
 
 cdef extern from "io/writer.h":
@@ -208,42 +225,42 @@ cdef extern from "io/writer.h":
         pass
 
     cdef cppclass Writer:
-        @staticmethod
+        @ staticmethod
         void write_point_queries(c_set[Point]& points, string fileName)
 
-        @staticmethod
+        @ staticmethod
         void write_box_queries(c_set[Box] boxes, string fileName)
 
-        @staticmethod
+        @ staticmethod
         void write_tree_VTK(string file_name, N & root, D & division, Mesh & mesh)
 
-        @staticmethod
+        @ staticmethod
         void write_mesh(string mesh_name, string operation_type, Mesh & mesh, c_bool extra_fields)
 
-        @staticmethod
+        @ staticmethod
         void write_mesh_VTK(string mesh_name, Mesh & mesh)
 
-        @staticmethod
+        @ staticmethod
         void write_mesh_curvature_VTK(string mesh_name, Mesh & mesh, string curvature_type, int c_pos)
-        @staticmethod
+        @ staticmethod
         void write_mesh_roughness_VTK(string mesh_name, Mesh & mesh, int c_pos)
-        @staticmethod
+        @ staticmethod
         void write_mesh_gradient_VTK(string mesh_name, Mesh & mesh, int c_pos)
-        @staticmethod
+        @ staticmethod
         void write_mesh_multifield_VTK(string mesh_name, Mesh & mesh, int c_pos, string mode)
-        @staticmethod
+        @ staticmethod
         void write_tri_slope_VTK(string mesh_name, Mesh & mesh, c_map[itype, coord_type] slopes)
 
-        @staticmethod
+        @ staticmethod
         void write_filtered_points_cloud(string mesh_name, Mesh & mesh)
-        @staticmethod
+        @ staticmethod
         void write_filtered_points_cloud_with_id(string mesh_name, Mesh & mesh)
-        @staticmethod
+        @ staticmethod
         void write_multifield_points_cloud(string mesh_name, vertex_multifield & multifield, Mesh & mesh)
 
-        @staticmethod
+        @ staticmethod
         void write_field_csv(string mesh_name, Mesh & mesh)
-        @staticmethod
+        @ staticmethod
         void write_critical_points_morse(string mesh_name, c_map[short, c_set[ivect]] & critical_simplices, Mesh & mesh)
-        @staticmethod
+        @ staticmethod
         void write_critical_points(string mesh_name, vector[short] & critical_simplices, Mesh & mesh)

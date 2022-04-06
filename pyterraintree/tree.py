@@ -2,6 +2,8 @@ from abc import abstractmethod
 from enum import Enum
 from os import PathLike
 
+import typepigeon
+
 import Terrain_Trees
 
 
@@ -17,12 +19,24 @@ class DivisionType(Enum):
 
 
 class TerrainTree:
-    def __init__(
-        self, vertices_per_leaf: int, division: DivisionType,
-    ):
+    def __init__(self, vertices_per_leaf: int, division: DivisionType):
+        if not isinstance(vertices_per_leaf, int):
+            vertices_per_leaf = int(vertices_per_leaf)
+
+        if not isinstance(division, DivisionType):
+            division = typepigeon.convert_value(division, DivisionType)
+
         self.__vertices_per_leaf = vertices_per_leaf
         self.__division = division
+
         self.__tree = None
+
+    @classmethod
+    @abstractmethod
+    def from_file(
+        cls, path: PathLike, vertices_per_leaf: int, division: DivisionType
+    ) -> 'TerrainTree':
+        raise NotImplementedError()
 
     @property
     def vertices_per_leaf(self) -> int:
@@ -32,14 +46,6 @@ class TerrainTree:
     def division(self) -> DivisionType:
         return self.__division
 
-    @classmethod
-    def from_file(
-        cls, path: PathLike, vertices_per_leaf: int, division: DivisionType
-    ) -> 'TerrainTree':
-        instance = cls(vertices_per_leaf, division)
-        instance.__tree.read_file(path)
-        return instance
-
     @abstractmethod
     def to_file(self, path: PathLike):
         raise NotImplementedError()
@@ -48,7 +54,7 @@ class TerrainTree:
 class PointRegionTree(TerrainTree):
     def __init__(self, vertices_per_leaf: int, division: DivisionType):
         super().__init__(vertices_per_leaf, division)
-        self.__tree = Terrain_Trees.PRT_Tree(self.vertices_per_leaf, self.division)
+        self.__tree = Terrain_Trees.PointRegionTree(self.vertices_per_leaf, self.division)
 
     def to_file(self, path: PathLike):
         pass
