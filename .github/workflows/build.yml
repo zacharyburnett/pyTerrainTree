@@ -6,13 +6,9 @@ on:
       - published
 
 jobs:
-  build_wheels:
+  build:
     name: build wheel
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ ubuntu-latest ]
-        python-version: [ '3.x' ]
+    runs-on: ubuntu-latest
     steps:
       - name: checkout repository
         uses: actions/checkout@v2
@@ -20,8 +16,6 @@ jobs:
           submodules: recursive
       - name: install Python
         uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
       - name: install dependencies on Linux
         run: sudo apt install libboost-all-dev libeigen3-dev
       - name: build wheel
@@ -31,7 +25,7 @@ jobs:
         with:
           name: build
           path: ./dist/*.whl
-  build_sdist:
+  package:
     name: package source
     runs-on: ubuntu-latest
     steps:
@@ -48,7 +42,7 @@ jobs:
         with:
           name: build
           path: ./dist/*.tar.gz
-  upload_pypi:
+  deploy:
     name: publish to PyPI
     needs: [ build_wheels, build_sdist ]
     runs-on: ubuntu-latest

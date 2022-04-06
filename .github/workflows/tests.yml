@@ -25,6 +25,9 @@ jobs:
     needs: lint
     name: test
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.6', '3.x' ]
     steps:
       - name: clone repository
         uses: actions/checkout@v2
@@ -32,6 +35,8 @@ jobs:
           submodules: recursive
       - name: install Python
         uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
       - name: load cached Python packages
         uses: actions/cache@v3
         with:
