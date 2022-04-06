@@ -11,8 +11,16 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: recursive
+      - name: load cached Python installation
+        id: cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.pythonLocation }}
+          key: build-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'setup.*') }}-${{ hashFiles('pyterraintree/cython/*', 'modules/*') }}
       - name: install Python
         uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
       - name: install flake8
         run: pip install flake8
       - name: lint with flake8
@@ -34,21 +42,16 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: recursive
-      - name: install Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: load cached Python packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: pip-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'setup.*') }}
       - name: load cached Python installation
         id: cache
         uses: actions/cache@v3
         with:
           path: ${{ env.pythonLocation }}
           key: build-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'setup.*') }}-${{ hashFiles('pyterraintree/cython/*', 'modules/*') }}
+      - name: install Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
       - name: install dependencies on Linux
         if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'ubuntu-latest'
         run: sudo apt install libeigen3-dev libboost-all-dev
@@ -60,6 +63,8 @@ jobs:
         uses: MarkusJx/install-boost@v2.2.0
         with:
           boost_version: 1.73.0
+          platform_version: 2019
+          toolset: msvc
           link: static+shared
       - name: build extension
         if: steps.cache.outputs.cache-hit != 'true'
