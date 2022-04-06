@@ -40,7 +40,7 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
         run: choco install eigen
       - name: install Boost on Windows
-        if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'ubuntu-latest'
+        if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
         uses: MarkusJx/install-boost@v2.2.0
         with:
           link: static+shared
