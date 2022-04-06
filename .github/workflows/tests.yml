@@ -58,6 +58,7 @@ jobs:
         run: choco install eigen
       - name: install Boost on Windows
         if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
+        id: boost
         uses: MarkusJx/install-boost@v2.2.0
         with:
           boost_version: 1.78.0
@@ -65,9 +66,7 @@ jobs:
           toolset: msvc
       - name: add BOOST_ROOT to PATH
         if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
-        run: |
-          echo $BOOST_ROOT
-          echo "{path}" >> $BOOST_ROOT
+        run: echo "{path}" >> ${{ steps.boost.outputs.BOOST_ROOT }}
       - name: build extension
         if: steps.cache.outputs.cache-hit != 'true'
         run: pip install .
