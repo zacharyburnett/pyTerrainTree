@@ -24,9 +24,10 @@ jobs:
   test:
     needs: lint
     name: test
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ ubuntu-latest, windows-latest ]
         python-version: [ '3.6', '3.x' ]
     steps:
       - name: clone repository
@@ -48,9 +49,15 @@ jobs:
         with:
           path: ${{ env.pythonLocation }}
           key: build-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'setup.*') }}-${{ hashFiles('pyterraintree/cython/*', 'modules/*') }}
-      - name: install dependencies on Linux
+      - name: install Boost
         if: steps.cache.outputs.cache-hit != 'true'
-        run: sudo apt install libboost-all-dev libeigen3-dev
+        uses: MarkusJx/install-boost@v2.2.0
+      - name: install Eigen on Linux
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: sudo apt install libeigen3-dev
+      - name: install Eigen on Windows
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: choco install eigen
       - name: build extension
         if: steps.cache.outputs.cache-hit != 'true'
         run: pip install .
