@@ -53,6 +53,9 @@ jobs:
       - name: install dependencies on Linux
         if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'ubuntu-latest'
         run: sudo apt install libeigen3-dev libboost-all-dev
+      - name: install dependencies on Windows
+        if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
+        run: choco install eigen
       - name: install Boost on Windows
         if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
         uses: MarkusJx/install-boost@v2.2.0
@@ -60,10 +63,10 @@ jobs:
           boost_version: 1.78.0
           platform_version: 2019
           toolset: msvc
-      - name: install dependencies on Windows
+      - name: add BOOST_ROOT to PATH
         if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
         run: |
-          choco install eigen
+          echo $BOOST_ROOT
           echo "{path}" >> $BOOST_ROOT
       - name: build extension
         if: steps.cache.outputs.cache-hit != 'true'
