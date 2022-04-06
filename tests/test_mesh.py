@@ -1,4 +1,4 @@
-from Terrain_Trees import Mesh, Soup
+from Terrain_Trees import Mesh
 from tests import INPUT_DIRECTORY
 
 
