@@ -52,7 +52,7 @@ jobs:
           key: build-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'setup.*') }}-${{ hashFiles('pyterraintree/cython/*', 'modules/*') }}
       - name: install dependencies on Linux
         if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'ubuntu-latest'
-        run: sudo apt install libeigen3-dev libboost-all-dev
+        run: sudo apt install libeigen3-dev
       - name: install dependencies on Windows
         if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
         run: choco install eigen
@@ -65,7 +65,7 @@ jobs:
       - name: build extension
         if: steps.cache.outputs.cache-hit != 'true'
         env:
-          BOOST_ROOT: ${{ steps.boost.outputs.BOOST_ROOT }}
+          PATH: ${{ env.PATH }};${{ steps.boost.outputs.BOOST_ROOT }}
         run: pip install .
       - name: install dependencies
         run: pip install pytest pytest-xdist
