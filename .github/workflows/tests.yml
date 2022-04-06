@@ -41,7 +41,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ env.pythonLocation }}
-          key: build-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'setup.*') }}-${{ github.sha }}
+          key: build-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'setup.*') }}-${{ hashFiles('pyterraintree/cython/*') }}
       - name: install dependencies on Linux
         run: sudo apt install libboost-all-dev libeigen3-dev
       - name: build extension
@@ -50,11 +50,7 @@ jobs:
   test:
     needs: [lint, build_extension]
     name: test
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ ubuntu-latest ]
-        python-version: [ '3.6', '3.x' ]
+    runs-on: ubuntu-latest
     steps:
       - name: clone repository
         uses: actions/checkout@v2
@@ -62,20 +58,14 @@ jobs:
           submodules: recursive
       - name: install Python
         uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: load cached Python packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: pip-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'setup.*') }}
       - name: load cached Python installation
         id: cache
         uses: actions/cache@v3
         with:
           path: ${{ env.pythonLocation }}
-          key: build-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'setup.*') }}-${{ github.sha }}
+          key: build-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'setup.*') }}-${{ hashFiles('pyterraintree/cython/*') }}
       - name: install dependencies on Linux
+        if: steps.cache.outputs.cache-hit != 'true'
         run: sudo apt install libboost-all-dev libeigen3-dev
       - name: build extension
         if: steps.cache.outputs.cache-hit != 'true'
