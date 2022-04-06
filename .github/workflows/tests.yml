@@ -49,17 +49,12 @@ jobs:
         with:
           path: ${{ env.pythonLocation }}
           key: build-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml', 'setup.*') }}-${{ hashFiles('pyterraintree/cython/*', 'modules/*') }}
-      - name: install Boost
-        if: steps.cache.outputs.cache-hit != 'true'
-        uses: MarkusJx/install-boost@v2.2.0
-        with:
-          boost_version: 1.78.0
-      - name: install Eigen on Linux
+      - name: install dependencies on Linux
         if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'ubuntu-latest'
-        run: sudo apt install libeigen3-dev
-      - name: install Eigen on Windows
+        run: sudo apt install libeigen3-dev libboost-all-dev
+      - name: install dependencies on Windows
         if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
-        run: choco install eigen
+        run: choco install eigen boost-msvc-14.1
       - name: build extension
         if: steps.cache.outputs.cache-hit != 'true'
         run: pip install .
