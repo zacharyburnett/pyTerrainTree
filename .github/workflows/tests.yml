@@ -65,6 +65,7 @@ jobs:
           platform_version: 2019
           toolset: msvc
       - name: setup-msbuild
+        if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
         uses: microsoft/setup-msbuild@v1.1
       - name: add BOOST_ROOT to PATH
         if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
