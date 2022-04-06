@@ -38,8 +38,7 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
         uses: MarkusJx/install-boost@v2.2.0
         with:
-          boost_version: 1.73.0
-          link: static+shared
+          boost_version: 1.78.0
       - name: build extension
         if: steps.cache.outputs.cache-hit != 'true'
         run: pip install .
