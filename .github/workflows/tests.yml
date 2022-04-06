@@ -54,7 +54,12 @@ jobs:
         run: sudo apt install libeigen3-dev libboost-all-dev
       - name: install dependencies on Windows
         if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'windows-latest'
-        run: choco install eigen boost-msvc-14.1
+        run: choco install eigen
+      - name: install Boost on Windows
+        if: steps.cache.outputs.cache-hit != 'true' && matrix.os == 'ubuntu-latest'
+        uses: MarkusJx/install-boost@v2.2.0
+        with:
+          link: static+shared
       - name: build extension
         if: steps.cache.outputs.cache-hit != 'true'
         run: pip install .
