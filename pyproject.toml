@@ -1,7 +1,40 @@
+[tool.poetry]
+name = 'pyterraintree'
+version = "0.0.0.post24.dev0+f7ac2a4"
+description = 'Python wrapper around Terrain Trees library'
+authors = ['Yunting Song <ytsong@terpmail.umd.edu>', 'Zach Burnett <zrb@umd.edu>']
+license = 'GPL-3.0-or-later'
+readme = 'README.md'
+repository = 'https://github.com/zacharyburnett/pyterraintree'
+build = 'build.py'
+
 [build-system]
 requires = [
-    "cython",
-    "dunamai",
-    "setuptools",
+    'cython',
+    'poetry-core>=1.0.0',
+    'poetry-dynamic-versioning',
+    'setuptools',
 ]
-build-backend = "setuptools.build_meta"
+build-backend = 'poetry.core.masonry.api'
+
+[tool.poetry-dynamic-versioning]
+enable = false
+
+[tool.poetry.dependencies]
+python = '^3.7'
+typepigeon = '*'
+
+[tool.poetry.dev-dependencies]
+flake8 = '*'
+isort = '*'
+m2r2 = '*'
+oitnb = '*'
+pytest = '*'
+pytest-cov = '*'
+pytest-xdist = '*'
+sphinx = '*'
+sphinx-rtd-theme = '*'
+
+[tool.poetry.extras]
+testing = ['pytest', 'pytest-cov', 'pytest-xdist']
+development = ['flake8', 'isort', 'oitnb']
