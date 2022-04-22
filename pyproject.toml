@@ -35,6 +35,3 @@ sphinx-rtd-theme = { version = '*', optional = true }
 [tool.poetry.extras]
 testing = ['pytest', 'pytest-cov', 'pytest-xdist']
 development = ['isort', 'oitnb']
-
-[tool.flake8]
-filename = '*.py, *.pyx'
