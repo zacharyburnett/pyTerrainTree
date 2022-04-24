@@ -436,7 +436,7 @@ cdef class PointRegionTree:
         self.__mesh._c_mesh = &self._c_tree.get_mesh()
 
     @classmethod
-    def from_file(cls, path: PathLike, vertices_per_leaf: int, int division_type) -> PointRegionTree:
+    def from_file(cls, path: PathLike, vertices_per_leaf: int, division_type: int) -> PointRegionTree:
         cdef PointRegionTree tree = PointRegionTree(vertices_per_leaf, division_type, build=False)
         cdef Mesh mesh = tree.mesh
         _c_reader.read_mesh(dereference(mesh._c_mesh), bytes(str(path), encoding='utf8'))
