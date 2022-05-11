@@ -18,7 +18,7 @@ cdef extern from "basic_types/basic_wrappers.h":
     ctypedef ivect VV_vec
     ctypedef vector[VT] leaf_VT
     ctypedef vector[VV] leaf_VV
-
+    ctypedef vector[VV_vec] leaf_VV_vec
     ctypedef pair[itype, itype] ET
     ctypedef c_map[ivect, ET] leaf_ET
 
@@ -55,9 +55,9 @@ cdef extern from "basic_types/point.h":
 
 cdef extern from "basic_types/box.h":
     cdef cppclass Box:
-        Box()
+        Box() except +
         # Box(Box& orig)
-        # Box(Point& min, Point& max) except +
+        Box(Point& min, Point& max) except +
 
         Point& get_min()
         void set_min(coord_type x, coord_type y)
@@ -72,7 +72,7 @@ cdef extern from "basic_types/vertex.h":
         # Vertex(Vertex& orig) except +
         Vertex(coord_type x, coord_type y) except +
         Vertex(coord_type x, coord_type y, coord_type field) except +
-        Vertex(coord_type x, coord_type y, dvect & fields) except +
+        Vertex(coord_type x, coord_type y, dvect& fields) except +
 
         coord_type get_z()
         coord_type get_c(int pos)
@@ -103,37 +103,39 @@ cdef extern from "basic_types/triangle.h":
         c_bool has_vertex(itype v_id)
 
         c_bool is_border_edge(int pos)
-        c_bool has_edge(const ivect & e)
-        short edge_index(const ivect & e)
+        c_bool has_edge(const ivect& e)
+        short edge_index(const ivect& e)
 
-        c_bool operator ==(const Triangle & p, const Triangle & q)
-        c_bool operator !=(const Triangle & p, const Triangle & q)
+        c_bool operator ==(const Triangle& p, const Triangle& q)
+        c_bool operator !=(const Triangle& p, const Triangle& q)
 
-        c_bool has_simplex(ivect & s)
+        c_bool has_simplex(ivect& s)
 
-        void convert_to_vec(ivect & t)
+        void convert_to_vec(ivect& t)
 
 cdef extern from "basic_types/explicit_triangle.h":
     cdef cppclass Explicit_Triangle:
         Explicit_Triangle() except +
 
         Vertex& get_vertex(int pos)
-        void add_vertex(Vertex & v)
+        void add_vertex(Vertex& v)
 
         int vertices_num()
 
+cdef cppclass N:
+    pass
 
 cdef extern from "terrain_trees/node_v.h":
-    cdef cppclass Node_V:
+    cdef cppclass Node_V(N):
         Node_V() except +
 
         int get_v_start()
         int get_v_end()
 
-        void get_VT(vector[vector[int]] & all_vt, Mesh & mesh)
-        void get_VV(leaf_VV & all_vv, Mesh& mesh)
-        void get_VV_VT(leaf_VV & all_vv, leaf_VT & all_vt, Mesh& mesh)
-        void get_ET(leaf_ET & ets, Mesh & mesh)
+        void get_VT(leaf_VT& all_vt, Mesh& mesh)
+        void get_VV(leaf_VV& all_vv, Mesh& mesh)
+        void get_VV_VT(leaf_VV& all_vv, leaf_VT& all_vt, Mesh& mesh)
+        void get_ET(leaf_ET& ets, Mesh& mesh)
 
         Node_V * get_son(int)
 
@@ -143,6 +145,21 @@ cdef extern from "terrain_trees/node_v.h":
         utype get_real_v_array_size()
         utype get_v_array_size()
 
+cdef extern from "terrain_trees/node_t.h":
+    cdef cppclass Node_T(N):
+        Node_T() except +
+
+        void get_v_range(itype & v_start, itype & v_end, Box& dom, Mesh& mesh)
+        c_bool indexes_vertex(itype v_start, itype v_end, itype v_id)
+
+        void get_VT(leaf_VT & all_vt, Box & dom, Mesh & mesh)
+        void get_VT(leaf_VT & all_vt, itype v_start, itype v_end, Mesh & mesh)
+        void get_VV(leaf_VV& all_vv, Box& dom, Mesh& mesh)
+        void get_VV(leaf_VV& all_vv, itype v_start, itype v_end, Mesh& mesh)
+        void get_VV_vector(leaf_VV_vec& all_vv, Box& dom, Mesh& mesh)
+        void get_VV_vector(leaf_VV_vec& all_vv, itype v_start, itype v_end, Mesh& mesh)
+        void get_VV_VT(leaf_VV& all_vv, leaf_VT& all_vt, itype v_start, itype v_end, Mesh& mesh);
+        void get_ET(leaf_ET& ets, itype v_start, itype v_end, Mesh& mesh);
 
 cdef extern from "basic_types/mesh.h":
     cdef cppclass Mesh:
@@ -183,17 +200,23 @@ cdef extern from "basic_types/soup.h":
 
         itype get_triangles_num()
 
+cdef extern from "terrain_trees/tree.h":
+    cdef cppclass Tree:
+        Mesh& get_mesh()
+        # N& get_root()
+        Spatial_Subdivision& get_subdivision()
+        void build_tree()
+        void build_tree(Soup& soup)
+        void build_tree_from_cloud(vertex_multifield & multifield)
 
 cdef extern from "terrain_trees/prt_tree.h":
-    cdef cppclass PRT_Tree:
+    cdef cppclass PRT_Tree(Tree):
         PRT_Tree()
         PRT_Tree(int vertices_per_leaf, int sons_num) except +
         # PRT_Tree(PRT_Tree& orig) except +
 
         void build_tree()
         void build_tree(Soup & soup)
-
-        Mesh& get_mesh()
 
         Node_V& get_root()
         unsigned get_leaves_number()
@@ -203,8 +226,8 @@ cdef extern from "terrain_trees/reindexer.h":
     cdef cppclass Reindexer:
         Reindexer() except +
         void reindex_tree_and_mesh(
-                PRT_Tree& tree, c_bool save_v_indices, vector[int] & original_vertex_indices,
-                c_bool save_t_indices, vector[int] & original_triangle_indices
+                PRT_Tree& tree, c_bool save_v_indices, vector[int]& original_vertex_indices,
+                c_bool save_t_indices, vector[int]& original_triangle_indices
         )
 
 
@@ -218,11 +241,8 @@ cdef extern from "io/reader.h":
 
 
 cdef extern from "io/writer.h":
-    cdef cppclass N:
-        pass
-
-    cdef cppclass D:
-        pass
+    ctypedef fused D:
+        int
 
     cdef cppclass Writer:
         @ staticmethod
@@ -232,35 +252,69 @@ cdef extern from "io/writer.h":
         void write_box_queries(c_set[Box] boxes, string fileName)
 
         @ staticmethod
-        void write_tree_VTK(string file_name, N & root, D & division, Mesh & mesh)
+        void write_tree_VTK(string file_name, N& root, D& division, Mesh& mesh)
 
         @ staticmethod
-        void write_mesh(string mesh_name, string operation_type, Mesh & mesh, c_bool extra_fields)
+        void write_mesh(string mesh_name, string operation_type, Mesh& mesh, c_bool extra_fields)
 
         @ staticmethod
-        void write_mesh_VTK(string mesh_name, Mesh & mesh)
+        void write_mesh_VTK(string mesh_name, Mesh& mesh)
 
         @ staticmethod
-        void write_mesh_curvature_VTK(string mesh_name, Mesh & mesh, string curvature_type, int c_pos)
+        void write_mesh_curvature_VTK(string mesh_name, Mesh& mesh, string curvature_type, int c_pos)
         @ staticmethod
-        void write_mesh_roughness_VTK(string mesh_name, Mesh & mesh, int c_pos)
+        void write_mesh_roughness_VTK(string mesh_name, Mesh& mesh, int c_pos)
         @ staticmethod
-        void write_mesh_gradient_VTK(string mesh_name, Mesh & mesh, int c_pos)
+        void write_mesh_gradient_VTK(string mesh_name, Mesh& mesh, int c_pos)
         @ staticmethod
-        void write_mesh_multifield_VTK(string mesh_name, Mesh & mesh, int c_pos, string mode)
+        void write_mesh_multifield_VTK(string mesh_name, Mesh& mesh, int c_pos, string mode)
         @ staticmethod
-        void write_tri_slope_VTK(string mesh_name, Mesh & mesh, c_map[itype, coord_type] slopes)
+        void write_tri_slope_VTK(string mesh_name, Mesh& mesh, c_map[itype, coord_type] slopes)
 
         @ staticmethod
-        void write_filtered_points_cloud(string mesh_name, Mesh & mesh)
+        void write_filtered_points_cloud(string mesh_name, Mesh& mesh)
         @ staticmethod
-        void write_filtered_points_cloud_with_id(string mesh_name, Mesh & mesh)
+        void write_filtered_points_cloud_with_id(string mesh_name, Mesh& mesh)
         @ staticmethod
-        void write_multifield_points_cloud(string mesh_name, vertex_multifield & multifield, Mesh & mesh)
+        void write_multifield_points_cloud(string mesh_name, vertex_multifield& multifield, Mesh& mesh)
 
         @ staticmethod
-        void write_field_csv(string mesh_name, Mesh & mesh)
+        void write_field_csv(string mesh_name, Mesh& mesh)
         @ staticmethod
-        void write_critical_points_morse(string mesh_name, c_map[short, c_set[ivect]] & critical_simplices, Mesh & mesh)
+        void write_critical_points_morse(string mesh_name, c_map[short, c_set[ivect]]& critical_simplices, Mesh& mesh)
         @ staticmethod
-        void write_critical_points(string mesh_name, vector[short] & critical_simplices, Mesh & mesh)
+        void write_critical_points(string mesh_name, vector[short]& critical_simplices, Mesh& mesh)
+
+
+cdef extern from "terrain_trees/spatial_subdivision.h":
+    cdef cppclass Spatial_Subdivision:
+        Spatial_Subdivision(int sn) except +
+
+        int son_number()
+        Box compute_domain(Box& parent_dom, int level, int child_ind)
+
+
+cdef extern from "terrain_features/critical_points_extractor.h":
+    cdef cppclass Critical_Points_Extractor:
+        void compute_critical_points(Node_V& n, Mesh& mesh, Spatial_Subdivision& division)
+        void compute_critical_points(Node_T& n, Box& dom, Mesh& mesh, Spatial_Subdivision& division)
+        void print_stats()
+        vector[short] get_critical_points()
+
+
+cdef extern from "terrain_features/slope_extractor.h":
+    cdef cppclass Slope_Extractor:
+        Slope_Extractor() except +
+
+        void compute_triangles_slopes(Node_V & n, Mesh & mesh, Spatial_Subdivision & division)
+        void compute_triangles_slopes(Node_T & n, Box & dom, int level, Mesh & mesh, Spatial_Subdivision & division)
+        void compute_triangles_slopes(N & n, Mesh & mesh, Spatial_Subdivision & division)
+
+        void compute_edges_slopes(Node_V & n, Mesh & mesh, Spatial_Subdivision & division)
+        void compute_edges_slopes(Node_T & n, Box & dom, int level, Mesh & mesh, Spatial_Subdivision & division)
+
+        void print_slopes_stats()
+        void print_slopes_stats(utype tnum)
+
+        void reset_stats()
+        c_map[itype, coord_type] get_tri_slopes()

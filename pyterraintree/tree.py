@@ -2,9 +2,8 @@ from abc import abstractmethod
 from enum import Enum
 from os import PathLike
 
-import typepigeon
-
 import Terrain_Trees
+import typepigeon
 
 
 class TreeType(Enum):
@@ -55,6 +54,12 @@ class PointRegionTree(TerrainTree):
     def __init__(self, vertices_per_leaf: int, division: DivisionType):
         super().__init__(vertices_per_leaf, division)
         self.__tree = Terrain_Trees.PointRegionTree(self.vertices_per_leaf, self.division)
+
+    @classmethod
+    def from_file(
+        cls, path: PathLike, vertices_per_leaf: int, division: DivisionType
+    ) -> 'TerrainTree':
+        pass
 
     def to_file(self, path: PathLike):
         pass
