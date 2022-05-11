@@ -27,8 +27,6 @@ def test_point_region_critical_points():
     tree_1 = PointRegionTree(1, 4)
 
     critical_points = tree_1.critical_points
-    critical_points.compute()
-
     critical_points.print_stats()
 
 
@@ -36,6 +34,4 @@ def test_point_region_triangle_slopes():
     tree_1 = PointRegionTree(1, 4)
 
     triangle_slopes = tree_1.triangle_slopes
-    triangle_slopes.compute()
-
     triangle_slopes.print_stats()
