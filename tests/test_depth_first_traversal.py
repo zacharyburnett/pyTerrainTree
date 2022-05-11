@@ -2,6 +2,7 @@ from functools import partial
 from typing import Callable
 
 from Terrain_Trees import Mesh, Node_V, PointRegionTree
+
 from tests import INPUT_DIRECTORY
 
 
@@ -22,7 +23,7 @@ def test_depth_first_traversal():
     tree.reindex(False, False)
 
     vertices = []
-    callable = lambda vertices, node: vertices.extend(range(node.v_start, node.v_end))
+    callable = lambda vertices, node: vertices.extend(range(node.first_index, node.last_index))
     callable = partial(callable, vertices)
 
     depth_first_traversal(callable, tree.root, tree.mesh)

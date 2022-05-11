@@ -1,19 +1,22 @@
 import os
-import warnings
 from pathlib import Path
+import warnings
 
 DIRECTORY = Path(__file__).parent
 
 try:
     from Cython.Build import cythonize
 except ImportError:
+
     def build(setup_kwargs):
         warnings.warn(f'cython not found - {setup_kwargs}')
+
+
 else:
-    from setuptools import Extension
-    from setuptools.dist import Distribution
     from distutils.command.build_ext import build_ext
 
+    from setuptools import Extension
+    from setuptools.dist import Distribution
 
     def build(setup_kwargs):
         cpp_sources_directory = DIRECTORY / 'modules' / 'Terrain_Trees' / 'sources'
@@ -32,18 +35,18 @@ else:
                 directory
                 for directory in cpp_core_library_directory.iterdir()
                 if directory.name
-                   in (
-                       'terrain_trees',
-                       'utilities',
-                       'basic_types',
-                       'curvature',
-                       'geometry',
-                       'io',
-                       'queries',
-                       'roughness',
-                       'statistics',
-                       'terrain_features',
-                   )
+                in (
+                    'terrain_trees',
+                    'utilities',
+                    'basic_types',
+                    'curvature',
+                    'geometry',
+                    'io',
+                    'queries',
+                    'roughness',
+                    'statistics',
+                    'terrain_features',
+                )
             ),
             '/usr/include/eigen3',
         ]
@@ -65,11 +68,11 @@ else:
 
         os.environ['CFLAGS'] = '-O3'
 
-        setup_kwargs.update({
-            'ext_modules': cythonize(
-                extensions,
-                language_level=3,
-                compiler_directives={'linetrace': True},
-            ),
-            'cmdclass': {'build_ext': build_ext}
-        })
+        setup_kwargs.update(
+            {
+                'ext_modules': cythonize(
+                    extensions, language_level=3, compiler_directives={'linetrace': True},
+                ),
+                'cmdclass': {'build_ext': build_ext},
+            }
+        )

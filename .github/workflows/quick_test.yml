@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - '**.py'
+      - '**.pyx'
+      - '**.pxd'
       - '.github/workflows/quick_test.yml'
       - 'pyproject.toml'
 
@@ -32,18 +34,11 @@ jobs:
     needs: lint
     name: quick test
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgis/postgis:13-3.1
-        env:
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: test_database
-        ports:
-          - 5432:5432
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
       - name: clone repository
         uses: actions/checkout@v2
+        with:
+          submodules: true
       - name: install Python
         uses: actions/setup-python@v2
       - name: load cached Python installation
@@ -52,15 +47,9 @@ jobs:
         with:
           path: ${{ env.pythonLocation }}
           key: test-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}
+      - name: install dependencies on Linux
+        run: sudo apt install libboost-all-dev libeigen3-dev
       - name: install dependencies
         run: pip install ".[testing]"
       - name: run tests
-        env:
-          APRS_FI_API_KEY: ${{ secrets.APRS_FI_API_KEY }}
-          APRS_IS_PASSWORD: ${{ secrets.APRS_IS_PASSWORD }}
-          POSTGRES_HOSTNAME: localhost
-          POSTGRES_PORT: 5432
-          POSTGRES_DATABASE: test_database
-          POSTGRES_USERNAME: postgres
-          POSTGRES_PASSWORD: test_password
         run: pytest
