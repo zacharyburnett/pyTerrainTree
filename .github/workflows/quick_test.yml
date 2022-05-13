@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - '**.py'
+      - '**.pyx'
+      - '**.pxd'
       - '.github/workflows/quick_test.yml'
       - 'pyproject.toml'
 
