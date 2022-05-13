@@ -18,8 +18,6 @@ jobs:
     steps:
       - name: clone repository
         uses: actions/checkout@v2
-        with:
-          submodules: true
       - name: install Python
         uses: actions/setup-python@v2
       - name: load cached Python installation
@@ -49,6 +47,8 @@ jobs:
         with:
           path: ${{ env.pythonLocation }}
           key: test-${{ runner.os }}-${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}
+      - name: install dependencies on Linux
+        run: sudo apt install libboost-all-dev libeigen3-dev
       - name: install dependencies
         run: pip install ".[testing]"
       - name: run tests
