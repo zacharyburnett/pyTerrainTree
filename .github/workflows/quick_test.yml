@@ -17,7 +17,7 @@ jobs:
       - name: clone repository
         uses: actions/checkout@v2
         with:
-          recursive: true
+          submodules: true
       - name: install Python
         uses: actions/setup-python@v2
       - name: load cached Python installation
@@ -38,7 +38,7 @@ jobs:
       - name: clone repository
         uses: actions/checkout@v2
         with:
-          recursive: true
+          submodules: true
       - name: install Python
         uses: actions/setup-python@v2
       - name: load cached Python installation
