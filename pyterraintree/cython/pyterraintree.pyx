@@ -4,12 +4,10 @@ from os import PathLike
 from typing import List
 
 # @formatter:off
-
 cimport c_Terrain_Trees
 from cpython.object cimport Py_EQ, Py_GE, Py_GT, Py_LE, Py_LT, Py_NE
 from cython.operator cimport dereference
 from libcpp.vector cimport vector
-
 # @formatter:on
 
 cdef class Point:
@@ -35,7 +33,7 @@ cdef class Point:
 
         return [self._c_point.get_c(index) for index in range(self._c_point.get_dimension())]
 
-    cpdef float distance(self, other: Point):
+    def distance(self, other: Point) -> float:
         """
         :param other: another point
         :return: distance to another point
@@ -97,9 +95,9 @@ cdef class VertexFields:
     def __getitem__(self, position: int) -> float:
         return self._c_vertex.get_field(position)
 
-    cpdef append(self, value: c_Terrain_Trees.coord_type):
+    def append(self, value: c_Terrain_Trees.coord_type):
         """
-        :param value: value to append to fields list 
+        :param value: value to append to fields list
         """
 
         self._c_vertex.add_field(value)
@@ -224,9 +222,9 @@ cdef class TriangleVertices:
         return Vertex(vertex.get_c(0), vertex.get_c(1),
                       tuple(vertex.get_field(index) for index in range(vertex.get_fields_num())))
 
-    cpdef append(self, vertex: Vertex):
+    def append(self, vertex: Vertex):
         """
-        :param vertex: vertex to append to the triangle 
+        :param vertex: vertex to append to the triangle
         """
 
         self._c_triangle.add_vertex(dereference(vertex._c_vertex))
@@ -378,7 +376,7 @@ cdef class Node_V(Node):
 
         return self._c_node_v.get_v_end()
 
-    cpdef c_Terrain_Trees.leaf_VT vertex_triangle_relations(self, Mesh mesh):
+    def vertex_triangle_relations(self, Mesh mesh) -> c_Terrain_Trees.leaf_VT:
         """
         :param mesh: mesh to check
         :return: neighboring vertex indices for each vertex in this triangle 
@@ -396,9 +394,9 @@ cdef class Node_V(Node):
 
         return self._c_node_v.is_leaf()
 
-    cpdef Node_V child(self, index: int):
+    def child(self, index: int) -> Node_V:
         """
-        :param index: index 
+        :param index: index
         :return: child node at the given index
         """
 
@@ -423,7 +421,7 @@ cdef class Node_T(Node):
 
         self._c_node_t = new c_Terrain_Trees.Node_T()
 
-    cpdef (int, int) vertex_range(self, Mesh mesh, Box domain):
+    def vertex_range(self, Mesh mesh, Box domain)-> (int, int):
         """
         :param mesh: mesh to check within
         :param domain: domain to check within
@@ -456,7 +454,7 @@ cdef class MeshVertices:
         return Vertex(*(vertex.get_c(index) for index in range(2)),
                       tuple(vertex.get_field(index) for index in range(vertex.get_fields_num())))
 
-    cpdef append(self, vertex: Vertex):
+    def append(self, vertex: Vertex):
         """
         :param vertex: vertex to append to the mesh
         """
@@ -493,7 +491,7 @@ cdef class MeshTriangles:
         cdef c_Terrain_Trees.Triangle triangle = self._c_mesh.get_triangle(position)
         return IndexTriangle(*(triangle.TV(position) for position in range(triangle.vertices_num())))
 
-    cpdef append(self, triangle: IndexTriangle):
+    def append(self, triangle: IndexTriangle):
         """
         :param triangle: triangle (of indices) to add to the mesh
         """
@@ -522,8 +520,8 @@ cdef class Mesh:
     """
 
     cdef c_Terrain_Trees.Mesh * _c_mesh
-    cpdef MeshVertices __vertices
-    cpdef MeshTriangles __triangles
+    cdef MeshVertices __vertices
+    cdef MeshTriangles __triangles
 
     def __cinit__(self):
         self._c_mesh = new c_Terrain_Trees.Mesh()
@@ -598,7 +596,7 @@ cdef class SoupTriangles:
 
         return triangle
 
-    cpdef append(self, triangle: Triangle):
+    def append(self, triangle: Triangle):
         """
         :param triangle: triangle to add to this soup
         """
@@ -621,7 +619,7 @@ cdef class Soup:
     """
 
     cdef c_Terrain_Trees.Soup * _c_soup
-    cpdef SoupTriangles __triangles
+    cdef SoupTriangles __triangles
 
     def __cinit__(self):
         self._c_soup = new c_Terrain_Trees.Soup()
@@ -775,10 +773,10 @@ cdef class Tree:
 
         raise NotImplementedError()
 
-    cpdef reindex(self, save_vertex_indices: bool, save_triangle_indices: bool):
+    def reindex(self, save_vertex_indices: bool, save_triangle_indices: bool):
         """
         reindex this tree
-        
+
         :param save_vertex_indices: whether to save the vertex indices
         :param save_triangle_indices: whether to save the triangle indices
         """
@@ -787,8 +785,8 @@ cdef class Tree:
 
 cdef class PointRegionTree(Tree):
     cdef c_Terrain_Trees.PRT_Tree * _c_tree
-    cpdef PointRegionTreeCriticalPoints __critical_points
-    cpdef PointRegionTreeTriangleSlopes __triangle_slopes
+    cdef PointRegionTreeCriticalPoints __critical_points
+    cdef PointRegionTreeTriangleSlopes __triangle_slopes
 
     def __cinit__(self, vertices_per_leaf: int, division_type: int, build: bool = True):
         self._c_tree = new c_Terrain_Trees.PRT_Tree(vertices_per_leaf, division_type)
@@ -842,7 +840,7 @@ cdef class PointRegionTree(Tree):
             self.__triangle_slopes.compute()
         return self.__triangle_slopes
 
-    cpdef reindex(self, save_vertex_indices: bool, save_triangle_indices: bool):
+    def reindex(self, save_vertex_indices: bool, save_triangle_indices: bool):
         cdef c_Terrain_Trees.Reindexer _c_reindexer = c_Terrain_Trees.Reindexer()
         cdef vector[int] original_vertex_indices
         cdef vector[int] original_triangle_indices
