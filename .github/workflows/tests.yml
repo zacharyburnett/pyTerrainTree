@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: clone repository
         uses: actions/checkout@v2
+        with:
+          recursive: true
       - name: install Python
         uses: actions/setup-python@v2
       - name: load cached Python installation
@@ -49,6 +51,8 @@ jobs:
     steps:
       - name: clone repository
         uses: actions/checkout@v2
+        with:
+          recursive: true
       - name: install Python
         uses: actions/setup-python@v2
         with:
@@ -70,6 +74,8 @@ jobs:
     steps:
       - name: clone repository
         uses: actions/checkout@v2
+        with:
+          recursive: true
       - name: install Python
         uses: actions/setup-python@v2
       - name: load cached Python installation
