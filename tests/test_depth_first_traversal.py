@@ -1,12 +1,12 @@
 from functools import partial
 from typing import Callable
 
-from Terrain_Trees import Mesh, Node_V, PointRegionTree
+from Terrain_Trees import Mesh, PointRegionTree, VertexNode
 
 from tests import INPUT_DIRECTORY
 
 
-def depth_first_traversal(callable: Callable, node: Node_V, mesh: Mesh):
+def depth_first_traversal(callable: Callable, node: VertexNode, mesh: Mesh):
     if node.is_leaf:
         if node.is_indexing_vertices:
             callable(node)
@@ -28,4 +28,4 @@ def test_depth_first_traversal():
 
     depth_first_traversal(callable, tree.root, tree.mesh)
 
-    assert len(vertices) == 32100
+    assert len(vertices) == len(tree.mesh.vertices)

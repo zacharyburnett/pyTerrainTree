@@ -122,11 +122,8 @@ cdef extern from "basic_types/explicit_triangle.h":
 
         int vertices_num()
 
-cdef cppclass N:
-    pass
-
 cdef extern from "terrain_trees/node_v.h":
-    cdef cppclass Node_V(N):
+    cdef cppclass Node_V:
         Node_V() except +
 
         int get_v_start()
@@ -146,7 +143,7 @@ cdef extern from "terrain_trees/node_v.h":
         utype get_v_array_size()
 
 cdef extern from "terrain_trees/node_t.h":
-    cdef cppclass Node_T(N):
+    cdef cppclass Node_T:
         Node_T() except +
 
         void get_v_range(itype & v_start, itype & v_end, Box& dom, Mesh& mesh)
@@ -242,7 +239,11 @@ cdef extern from "io/reader.h":
 
 cdef extern from "io/writer.h":
     ctypedef fused D:
-        int
+        Spatial_Subdivision
+
+    ctypedef fused N:
+        Node_V
+        Node_T
 
     cdef cppclass Writer:
         @ staticmethod
@@ -252,7 +253,10 @@ cdef extern from "io/writer.h":
         void write_box_queries(c_set[Box] boxes, string fileName)
 
         @ staticmethod
-        void write_tree_VTK(string file_name, N& root, D& division, Mesh& mesh)
+        void write_tree_VTK(string file_name, Node_V& root, Spatial_Subdivision& division, Mesh& mesh)
+
+        @ staticmethod
+        void write_tree_VTK(string file_name, Node_T& root, Spatial_Subdivision& division, Mesh& mesh)
 
         @ staticmethod
         void write_mesh(string mesh_name, string operation_type, Mesh& mesh, c_bool extra_fields)
@@ -308,7 +312,6 @@ cdef extern from "terrain_features/slope_extractor.h":
 
         void compute_triangles_slopes(Node_V & n, Mesh & mesh, Spatial_Subdivision & division)
         void compute_triangles_slopes(Node_T & n, Box & dom, int level, Mesh & mesh, Spatial_Subdivision & division)
-        void compute_triangles_slopes(N & n, Mesh & mesh, Spatial_Subdivision & division)
 
         void compute_edges_slopes(Node_V & n, Mesh & mesh, Spatial_Subdivision & division)
         void compute_edges_slopes(Node_T & n, Box & dom, int level, Mesh & mesh, Spatial_Subdivision & division)

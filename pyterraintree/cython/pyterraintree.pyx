@@ -11,7 +11,7 @@ from libcpp.vector cimport vector
 # @formatter:on
 
 cdef class Point:
-    cdef c_Terrain_Trees.Point * _c_point
+    cdef c_Terrain_Trees.Point *_c_point
 
     def __cinit__(self, x: c_Terrain_Trees.coord_type, y: c_Terrain_Trees.coord_type):
         """
@@ -21,6 +21,9 @@ cdef class Point:
 
         self._c_point = new c_Terrain_Trees.Point()
         self._c_point.set(x, y)
+
+    cdef set_point(self, c_Terrain_Trees.Point *point):
+        self._c_point = point
 
     def __copy__(self) -> Point:
         return self.__class__(*self.coords)
@@ -82,15 +85,13 @@ cdef class Point:
         raise NotImplementedError()
 
 cdef class VertexFields:
-    cdef c_Terrain_Trees.Vertex * _c_vertex
+    cdef c_Terrain_Trees.Vertex *_c_vertex
 
-    def __cinit__(self, vertex: Vertex):
-        """
-        :param vertex: vertex to attach fields to
-        :return: set of vertex fields attached to the given vertex
-        """
+    def __cinit__(self):
+        self._c_vertex = new c_Terrain_Trees.Vertex()
 
-        self._c_vertex = vertex._c_vertex
+    cdef set_vertex(self, c_Terrain_Trees.Vertex *vertex):
+        self._c_vertex = vertex
 
     def __getitem__(self, position: int) -> float:
         return self._c_vertex.get_field(position)
@@ -115,7 +116,7 @@ cdef class VertexFields:
         return f'{self.__class__.__name__} - {self.coords} - {", ".join(str(value) for value in self)}'
 
 cdef class Vertex:
-    cdef c_Terrain_Trees.Vertex * _c_vertex
+    cdef c_Terrain_Trees.Vertex *_c_vertex
     cdef VertexFields __fields
 
     def __cinit__(
@@ -137,7 +138,11 @@ cdef class Vertex:
         else:
             self._c_vertex = new c_Terrain_Trees.Vertex(x, y, fields)
 
-        self.__fields = VertexFields(self)
+        self.__fields = VertexFields()
+        self.__fields.set_vertex(self._c_vertex)
+
+    cdef set_vertex(self, c_Terrain_Trees.Vertex *vertex):
+        self._c_vertex = vertex
 
     @property
     def coords(self) -> List[float]:
@@ -159,14 +164,13 @@ cdef class Vertex:
         return self.coords == other.coords and self.fields == other.fields
 
 cdef class TriangleVertexIndices:
-    cdef c_Terrain_Trees.Triangle * _c_index_triangle
+    cdef c_Terrain_Trees.Triangle *_c_index_triangle
 
-    def __cinit__(self, triangle: IndexTriangle):
-        """
-        :param triangle: triangle to attach indices to
-        """
+    def __cinit__(self):
+        self._c_index_triangle = new c_Terrain_Trees.Triangle()
 
-        self._c_index_triangle = triangle._c_index_triangle
+    cdef set_triangle(self, c_Terrain_Trees.Triangle *triangle):
+        self._c_index_triangle = triangle
 
     def __getitem__(self, position: int) -> int:
         return self._c_index_triangle.TV(position)
@@ -182,14 +186,13 @@ cdef class TriangleVertexIndices:
         return f'{self.__class__.__name__} - {", ".join(str(value) for value in self)}'
 
 cdef class TriangleEdgeIndices:
-    cdef c_Terrain_Trees.Triangle * _c_index_triangle
+    cdef c_Terrain_Trees.Triangle *_c_index_triangle
 
-    def __cinit__(self, triangle: IndexTriangle):
-        """
-        :param triangle: triangle to index
-        """
+    def __cinit__(self):
+        self._c_index_triangle = new c_Terrain_Trees.Triangle()
 
-        self._c_index_triangle = triangle._c_index_triangle
+    cdef set_triangle(self, c_Terrain_Trees.Triangle *triangle):
+        self._c_index_triangle = triangle
 
     def __getitem__(self, position: int) -> vector[int]:
         cdef vector[int] edge
@@ -208,14 +211,13 @@ cdef class TriangleEdgeIndices:
         return f'{self.__class__.__name__} - {", ".join(str(value) for value in self)}'
 
 cdef class TriangleVertices:
-    cdef c_Terrain_Trees.Explicit_Triangle * _c_triangle
+    cdef c_Terrain_Trees.Explicit_Triangle *_c_triangle
 
-    def __cinit__(self, triangle: Triangle):
-        """
-        :param triangle: triangle to attach vertices to
-        """
+    def __cinit__(self):
+        self._c_triangle = new c_Terrain_Trees.Explicit_Triangle()
 
-        self._c_triangle = triangle._c_triangle
+    cdef set_triangle(self, c_Terrain_Trees.Explicit_Triangle *triangle):
+        self._c_triangle = triangle
 
     def __getitem__(self, position: int) -> Vertex:
         cdef c_Terrain_Trees.Vertex vertex = self._c_triangle.get_vertex(position)
@@ -240,7 +242,7 @@ cdef class TriangleVertices:
         return f'{self.__class__.__name__} - {", ".join(str(value) for value in self)}'
 
 cdef class Triangle:
-    cdef c_Terrain_Trees.Explicit_Triangle * _c_triangle
+    cdef c_Terrain_Trees.Explicit_Triangle *_c_triangle
     cdef TriangleVertices __vertices
 
     def __cinit__(
@@ -257,11 +259,15 @@ cdef class Triangle:
 
         self._c_triangle = new c_Terrain_Trees.Explicit_Triangle()
 
-        self.__vertices = TriangleVertices(self)
+        self.__vertices = TriangleVertices()
+        self.__vertices.set_triangle(self._c_triangle)
 
-        self.vertices.append(vertex_1)
-        self.vertices.append(vertex_2)
-        self.vertices.append(vertex_3)
+        self.__vertices.append(vertex_1)
+        self.__vertices.append(vertex_2)
+        self.__vertices.append(vertex_3)
+
+    cdef set_triangle(self, c_Terrain_Trees.Explicit_Triangle *triangle):
+        self._c_triangle = triangle
 
     @property
     def vertices(self) -> TriangleVertices:
@@ -275,7 +281,7 @@ cdef class Triangle:
         return any(vertex == triangle_vertex for triangle_vertex in self.vertices)
 
 cdef class IndexTriangle:
-    cdef c_Terrain_Trees.Triangle * _c_index_triangle
+    cdef c_Terrain_Trees.Triangle *_c_index_triangle
     cdef TriangleVertexIndices __vertices
     cdef TriangleEdgeIndices __edges
 
@@ -296,8 +302,14 @@ cdef class IndexTriangle:
         else:
             self._c_index_triangle = new c_Terrain_Trees.Triangle(vertex_1, vertex_2, vertex_3)
 
-        self.__vertices = TriangleVertexIndices(self)
-        self.__edges = TriangleEdgeIndices(self)
+        self.__vertices = TriangleVertexIndices()
+        self.__vertices.set_triangle(self._c_index_triangle)
+
+        self.__edges = TriangleEdgeIndices()
+        self.__edges.set_triangle(self._c_index_triangle)
+
+    cdef set_triangle(self, c_Terrain_Trees.Triangle *triangle):
+        self._c_index_triangle = triangle
 
     @property
     def vertices(self) -> TriangleVertexIndices:
@@ -333,7 +345,7 @@ cdef class IndexTriangle:
             return self._c_index_triangle.has_simplex(item)
 
 cdef class Box:
-    cdef c_Terrain_Trees.Box * _c_box
+    cdef c_Terrain_Trees.Box *_c_box
 
     def __cinit__(self, min_x: c_Terrain_Trees.coord_type, min_y: c_Terrain_Trees.coord_type, max_x: c_Terrain_Trees.coord_type, max_y: c_Terrain_Trees.coord_type):
         """
@@ -347,18 +359,21 @@ cdef class Box:
         cdef Point max_point = Point(max_x, max_y)
         self._c_box = new c_Terrain_Trees.Box(dereference(min_point._c_point), dereference(max_point._c_point))
 
-cdef class Node:
-    pass
+    cdef set_box(self, c_Terrain_Trees.Box *box):
+        self._c_box = box
 
-cdef class Node_V(Node):
-    cdef c_Terrain_Trees.Node_V * _c_node_v
+cdef class VertexNode:
+    cdef c_Terrain_Trees.Node_V *_c_node
 
     def __cinit__(self):
         """
         a node encoding vertices
         """
 
-        self._c_node_v = new c_Terrain_Trees.Node_V()
+        self._c_node = new c_Terrain_Trees.Node_V()
+
+    cdef set_node(self, c_Terrain_Trees.Node_V *node):
+        self._c_node = node
 
     @property
     def first_index(self) -> int:
@@ -366,7 +381,7 @@ cdef class Node_V(Node):
         :return: first vertex index of this node
         """
 
-        return self._c_node_v.get_v_start()
+        return self._c_node.get_v_start()
 
     @property
     def last_index(self) -> int:
@@ -374,7 +389,7 @@ cdef class Node_V(Node):
         :return: final vertex index of this node
         """
 
-        return self._c_node_v.get_v_end()
+        return self._c_node.get_v_end()
 
     def vertex_triangle_relations(self, Mesh mesh) -> c_Terrain_Trees.leaf_VT:
         """
@@ -383,7 +398,7 @@ cdef class Node_V(Node):
         """
 
         cdef c_Terrain_Trees.leaf_VT vertex_triangle_relations
-        self._c_node_v.get_VT(vertex_triangle_relations, dereference(mesh._c_mesh))
+        self._c_node.get_VT(vertex_triangle_relations, dereference(mesh._c_mesh))
         return vertex_triangle_relations
 
     @property
@@ -392,36 +407,37 @@ cdef class Node_V(Node):
         :return: whether this node is a leaf node (contains only values)
         """
 
-        return self._c_node_v.is_leaf()
+        return self._c_node.is_leaf()
 
-    def child(self, index: int) -> Node_V:
+    def child(self, index: int) -> VertexNode:
         """
         :param index: index
         :return: child node at the given index
         """
 
-        cdef Node_V node_v = Node_V()
-        if self._c_node_v.get_son(index) is NULL:
-            return None
-        else:
-            node_v._c_node_v = self._c_node_v.get_son(index)
-            return node_v
+        cdef c_Terrain_Trees.Node_V *child_node = self._c_node.get_son(index)
+        cdef VertexNode child = VertexNode()
+        child.set_node(child_node)
+        return child
 
     @property
     def is_indexing_vertices(self) -> bool:
-        return self._c_node_v.indexes_vertices()
+        return self._c_node.indexes_vertices()
 
-cdef class Node_T(Node):
-    cdef c_Terrain_Trees.Node_T * _c_node_t
+cdef class TriangleNode:
+    cdef c_Terrain_Trees.Node_T *_c_node
 
     def __cinit__(self):
         """
         a node encoding triangles
         """
 
-        self._c_node_t = new c_Terrain_Trees.Node_T()
+        self._c_node = new c_Terrain_Trees.Node_T()
 
-    def vertex_range(self, Mesh mesh, Box domain)-> (int, int):
+    cdef set_node(self, c_Terrain_Trees.Node_T *node):
+        self._c_node = node
+
+    def vertex_range(self, Mesh mesh, Box domain) -> (int, int):
         """
         :param mesh: mesh to check within
         :param domain: domain to check within
@@ -430,24 +446,23 @@ cdef class Node_T(Node):
 
         cdef c_Terrain_Trees.itype start_index
         cdef c_Terrain_Trees.itype end_index
-        self._c_node_t.get_v_range(start_index, end_index, dereference(domain._c_box), dereference(mesh._c_mesh))
+        self._c_node.get_v_range(start_index, end_index, dereference(domain._c_box), dereference(mesh._c_mesh))
         return int(start_index), int(end_index)
 
     def vertex_in_range(self, vertex_index: int, start_index: int, end_index: int) -> bool:
-        return self._c_node_t.indexes_vertex(v_start=start_index, v_end=end_index, v_id=vertex_index)
+        return self._c_node.indexes_vertex(v_start=start_index, v_end=end_index, v_id=vertex_index)
 
-cdef c_Terrain_Trees.Reader * _c_reader
-cdef c_Terrain_Trees.Writer * _c_writer
+cdef c_Terrain_Trees.Reader *_c_reader
+cdef c_Terrain_Trees.Writer *_c_writer
 
 cdef class MeshVertices:
-    cdef c_Terrain_Trees.Mesh * _c_mesh
+    cdef c_Terrain_Trees.Mesh *_c_mesh
 
-    def __cinit__(self, mesh: Mesh):
-        """
-        :param mesh: mesh to attach vertices to
-        """
+    def __cinit__(self):
+        self._c_mesh = new c_Terrain_Trees.Mesh()
 
-        self._c_mesh = mesh._c_mesh
+    cdef set_mesh(self, c_Terrain_Trees.Mesh *mesh):
+        self._c_mesh = mesh
 
     def __getitem__(self, position: c_Terrain_Trees.itype) -> Vertex:
         cdef c_Terrain_Trees.Vertex vertex = self._c_mesh.get_vertex(position)
@@ -478,17 +493,18 @@ cdef class MeshVertices:
         return f'{self.__class__.__name__} - {", ".join(str(value) for value in self)}'
 
 cdef class MeshTriangles:
-    cdef c_Terrain_Trees.Mesh * _c_mesh
+    cdef c_Terrain_Trees.Mesh *_c_mesh
 
-    def __cinit__(self, mesh: Mesh):
-        """
-        :param mesh: mesh to attach triangles to
-        """
+    def __cinit__(self):
+        self._c_mesh = new c_Terrain_Trees.Mesh()
 
-        self._c_mesh = mesh._c_mesh
+    cdef set_mesh(self, c_Terrain_Trees.Mesh *mesh):
+        self._c_mesh = mesh
 
     def __getitem__(self, position: c_Terrain_Trees.itype) -> IndexTriangle:
         cdef c_Terrain_Trees.Triangle triangle = self._c_mesh.get_triangle(position)
+        if triangle.vertices_num() < 3:
+            raise ValueError(f'empty triangle at position {position}')
         return IndexTriangle(*(triangle.TV(position) for position in range(triangle.vertices_num())))
 
     def append(self, triangle: IndexTriangle):
@@ -519,14 +535,23 @@ cdef class Mesh:
     a mesh of triangles linked by neighbor adjacencies
     """
 
-    cdef c_Terrain_Trees.Mesh * _c_mesh
+    cdef c_Terrain_Trees.Mesh *_c_mesh
     cdef MeshVertices __vertices
     cdef MeshTriangles __triangles
 
     def __cinit__(self):
         self._c_mesh = new c_Terrain_Trees.Mesh()
-        self.__vertices = MeshVertices(self)
-        self.__triangles = MeshTriangles(self)
+
+        self.__vertices = MeshVertices()
+        self.__vertices.set_mesh(self._c_mesh)
+
+        self.__triangles = MeshTriangles()
+        self.__triangles.set_mesh(self._c_mesh)
+
+    cdef set_mesh(self, c_Terrain_Trees.Mesh *mesh):
+        self._c_mesh = mesh
+        self.__vertices.set_mesh(self._c_mesh)
+        self.__triangles.set_mesh(self._c_mesh)
 
     @classmethod
     def from_file(cls, path: PathLike):
@@ -534,8 +559,11 @@ cdef class Mesh:
         :param path: file path of mesh
         """
 
+        cdef c_Terrain_Trees.Mesh *mesh = new c_Terrain_Trees.Mesh()
+        _c_reader.read_mesh(dereference(mesh), bytes(str(path), encoding='utf8'))
+
         cdef Mesh instance = cls()
-        _c_reader.read_mesh(dereference(instance._c_mesh), bytes(str(path), encoding='utf8'))
+        instance.set_mesh(mesh)
         return instance
 
     def to_file(self, path: PathLike, extra_fields: bool = False):
@@ -568,14 +596,17 @@ cdef class Mesh:
         return self.__triangles
 
 cdef class SoupTriangles:
-    cdef c_Terrain_Trees.Soup * _c_soup
+    cdef c_Terrain_Trees.Soup *_c_soup
 
-    def __cinit__(self, soup: Soup):
+    def __cinit__(self):
         """
         :param soup: soup to attach triangles to
         """
 
-        self._c_soup = soup._c_soup
+        self._c_soup = new c_Terrain_Trees.Soup()
+
+    cdef set_soup(self, c_Terrain_Trees.Soup *soup):
+        self._c_soup = soup
 
     def __getitem__(self, position: c_Terrain_Trees.itype) -> Triangle:
         # TODO fix this, it currently causes a segfault
@@ -618,12 +649,18 @@ cdef class Soup:
     a collection of triangles (with coordinates instead of indices)
     """
 
-    cdef c_Terrain_Trees.Soup * _c_soup
+    cdef c_Terrain_Trees.Soup *_c_soup
     cdef SoupTriangles __triangles
 
     def __cinit__(self):
         self._c_soup = new c_Terrain_Trees.Soup()
-        self.__triangles = SoupTriangles(self)
+
+        self.__triangles = SoupTriangles()
+        self.__triangles.set_soup(self._c_soup)
+
+    cdef set_soup(self, c_Terrain_Trees.Soup *soup):
+        self._c_soup = soup
+        self.__triangles.set_soup(self._c_soup)
 
     @classmethod
     def from_file(cls, path: PathLike):
@@ -643,13 +680,35 @@ cdef class Soup:
 
         return self.__triangles
 
-cdef class TreeCriticalPoints:
-    cdef c_Terrain_Trees.c_bool __computed
-    cdef c_Terrain_Trees.Critical_Points_Extractor * _c_critical_points_extractor
+cdef class SpatialSubdivision:
+    cdef c_Terrain_Trees.Spatial_Subdivision *_c_subdivision
 
-    def compute(self):
+    def __cinit__(self, children: int):
+        self._c_subdivision = new c_Terrain_Trees.Spatial_Subdivision(children)
+
+    cdef set_subdivision(self, c_Terrain_Trees.Spatial_Subdivision *subdivision):
+        self._c_subdivision = subdivision
+
+    @property
+    def children(self) -> int:
+        return self._c_subdivision.son_number()
+
+cdef class MeshCriticalPoints:
+    cdef c_Terrain_Trees.c_bool __computed
+    cdef c_Terrain_Trees.Critical_Points_Extractor *_c_critical_points_extractor
+    cdef c_Terrain_Trees.Mesh *_c_mesh
+
+    def __cinit__(self):
+        self._c_mesh = new c_Terrain_Trees.Mesh()
+        self._c_critical_points_extractor = new c_Terrain_Trees.Critical_Points_Extractor()
+        self.__computed = False
+
+    cdef set_mesh(self, c_Terrain_Trees.Mesh *mesh):
+        self._c_mesh = mesh
+
+    def compute(self, root_node: Union[VertexNode, TriangleNode], subdivision: SpatialSubdivision):
         """
-        add critical points information to the given tree
+        add critical points information to the given mesh
         """
 
         raise NotImplementedError()
@@ -660,33 +719,45 @@ cdef class TreeCriticalPoints:
     def print_stats(self):
         self._c_critical_points_extractor.print_stats()
 
-cdef class PointRegionTreeCriticalPoints(TreeCriticalPoints):
-    cdef c_Terrain_Trees.PRT_Tree * _c_tree
-
-    def __cinit__(self, tree: PointRegionTree):
-        """
-        :param tree: tree to attach critical points to
-        """
-
-        self._c_tree = tree._c_tree
-        self._c_critical_points_extractor = new c_Terrain_Trees.Critical_Points_Extractor()
-        self.__computed = False
-
-    def compute(self):
+cdef class VertexNodeMeshCriticalPoints(MeshCriticalPoints):
+    def compute(self, root_node: VertexNode, subdivision: SpatialSubdivision):
         self._c_critical_points_extractor.compute_critical_points(
-            self._c_tree.get_root(),
-            self._c_tree.get_mesh(),
-            self._c_tree.get_subdivision(),
+            dereference(root_node._c_node),
+            dereference(self._c_mesh),
+            dereference(subdivision._c_subdivision),
         )
         self.__computed = True
 
-cdef class TreeTriangleSlopes:
-    cdef c_Terrain_Trees.c_bool __computed
-    cdef c_Terrain_Trees.Slope_Extractor * _c_slope_extractor
+cdef class TriangleNodeMeshCriticalPoints(MeshCriticalPoints):
+    def compute(self, root_node: TriangleNode, subdivision: SpatialSubdivision, domain: Box):
+        self._c_critical_points_extractor.compute_critical_points(
+            dereference(root_node._c_node),
+            dereference(domain._c_box),
+            dereference(self._c_mesh),
+            dereference(subdivision._c_subdivision),
+        )
+        self.__computed = True
 
-    def compute(self):
+cdef class MeshTriangleSlopes:
+    cdef c_Terrain_Trees.c_bool __computed
+    cdef c_Terrain_Trees.Slope_Extractor *_c_slope_extractor
+    cdef c_Terrain_Trees.Mesh *_c_mesh
+
+    def __cinit__(self):
         """
-        add triangle slope information to the given tree
+        :param mesh: mesh to attach triangle slopes to
+        """
+
+        self._c_mesh = new c_Terrain_Trees.Mesh()
+        self._c_slope_extractor = new c_Terrain_Trees.Slope_Extractor()
+        self.__computed = False
+
+    cdef set_mesh(self, c_Terrain_Trees.Mesh *mesh):
+        self._c_mesh = mesh
+
+    def compute(self, root_node: Union[VertexNode, TriangleNode], subdivision: SpatialSubdivision):
+        """
+        add triangle slope information to the given mesh
         """
 
         raise NotImplementedError()
@@ -698,28 +769,35 @@ cdef class TreeTriangleSlopes:
         self._c_slope_extractor.print_slopes_stats()
         self._c_slope_extractor.reset_stats()
 
-cdef class PointRegionTreeTriangleSlopes(TreeTriangleSlopes):
-    cdef c_Terrain_Trees.PRT_Tree * _c_tree
-
-    def __cinit__(self, tree: PointRegionTree):
-        """
-        :param tree: tree to attach triangle slopes to
-        """
-
-        self._c_tree = tree._c_tree
-        self._c_slope_extractor = new c_Terrain_Trees.Slope_Extractor()
-        self.__computed = False
-
-    def compute(self):
+cdef class VertexNodeMeshTriangleSlopes(MeshTriangleSlopes):
+    def compute(self, root_node: VertexNode, subdivision: SpatialSubdivision):
         self._c_slope_extractor.compute_triangles_slopes(
-            self._c_tree.get_root(),
-            self._c_tree.get_mesh(),
-            self._c_tree.get_subdivision(),
+            dereference(root_node._c_node),
+            dereference(self._c_mesh),
+            dereference(subdivision._c_subdivision),
         )
         self._c_slope_extractor.compute_edges_slopes(
-            self._c_tree.get_root(),
-            self._c_tree.get_mesh(),
-            self._c_tree.get_subdivision(),
+            dereference(root_node._c_node),
+            dereference(self._c_mesh),
+            dereference(subdivision._c_subdivision),
+        )
+        self.__computed = True
+
+cdef class TriangleNodeMeshTriangleSlopes(MeshTriangleSlopes):
+    def compute(self, root_node: TriangleNode, subdivision: SpatialSubdivision, domain: Box, level: int):
+        self._c_slope_extractor.compute_triangles_slopes(
+            dereference(root_node._c_node),
+            dereference(domain._c_box),
+            level,
+            dereference(self._c_mesh),
+            dereference(subdivision._c_subdivision),
+        )
+        self._c_slope_extractor.compute_edges_slopes(
+            dereference(root_node._c_node),
+            dereference(domain._c_box),
+            level,
+            dereference(self._c_mesh),
+            dereference(subdivision._c_subdivision),
         )
         self.__computed = True
 
@@ -730,7 +808,9 @@ cdef class Tree:
 
     cdef Mesh __mesh
     cdef int __vertices_per_leaf
-    cdef int __division_type
+    cdef SpatialSubdivision __subdivision
+    cdef MeshCriticalPoints __critical_points
+    cdef MeshTriangleSlopes __triangle_slopes
 
     @classmethod
     def from_file(cls, path: PathLike, vertices_per_leaf: int, division_type: int) -> PointRegionTree:
@@ -750,6 +830,14 @@ cdef class Tree:
         raise NotImplementedError()
 
     @property
+    def subdivision(self) -> SpatialSubdivision:
+        return self.__subdivision
+
+    @property
+    def vertices_per_leaf(self) -> int:
+        return self.__vertices_per_leaf
+
+    @property
     def mesh(self) -> Mesh:
         """
         :return: underlying triangle mesh of this tree
@@ -758,7 +846,7 @@ cdef class Tree:
         raise NotImplementedError()
 
     @property
-    def root(self) -> Union[Node_V, Node_T]:
+    def root(self) -> VertexNode:
         """
         :return: root node of this tree
         """
@@ -783,35 +871,56 @@ cdef class Tree:
 
         raise NotImplementedError()
 
-cdef class PointRegionTree(Tree):
-    cdef c_Terrain_Trees.PRT_Tree * _c_tree
-    cdef PointRegionTreeCriticalPoints __critical_points
-    cdef PointRegionTreeTriangleSlopes __triangle_slopes
+    @property
+    def critical_points(self):
+        raise NotImplementedError()
 
-    def __cinit__(self, vertices_per_leaf: int, division_type: int, build: bool = True):
-        self._c_tree = new c_Terrain_Trees.PRT_Tree(vertices_per_leaf, division_type)
+    @property
+    def triangle_slopes(self):
+        raise NotImplementedError()
+
+cdef class PointRegionTree(Tree):
+    cdef c_Terrain_Trees.PRT_Tree *_c_tree
+
+    def __cinit__(self, vertices_per_leaf: int, spatial_subdivision: int, build: bool = True):
+        self._c_tree = new c_Terrain_Trees.PRT_Tree(vertices_per_leaf, spatial_subdivision)
+
         if build:
             self._c_tree.build_tree()
-        self.__mesh = Mesh()
-        self.__mesh._c_mesh = &self._c_tree.get_mesh()
-        self.__vertices_per_leaf = vertices_per_leaf
-        self.__division_type = division_type
 
-        self.__critical_points = PointRegionTreeCriticalPoints(self)
-        self.__triangle_slopes = PointRegionTreeTriangleSlopes(self)
+        self.__mesh = Mesh()
+        self.__mesh.set_mesh(&self._c_tree.get_mesh())
+
+        self.__vertices_per_leaf = vertices_per_leaf
+        self.__subdivision = SpatialSubdivision(spatial_subdivision)
+
+        self.__critical_points = VertexNodeMeshCriticalPoints(self.__mesh)
+        self.__critical_points.set_mesh(self.__mesh._c_mesh)
+
+        self.__triangle_slopes = VertexNodeMeshTriangleSlopes(self.__mesh)
+        self.__triangle_slopes.set_mesh(self.__mesh._c_mesh)
 
     @classmethod
-    def from_file(cls, path: PathLike, vertices_per_leaf: int, division_type: int) -> PointRegionTree:
-        cdef PointRegionTree tree = PointRegionTree(vertices_per_leaf, division_type, build=False)
+    def from_file(cls, path: PathLike, vertices_per_leaf: int, spatial_subdivision: int) -> PointRegionTree:
+        cdef PointRegionTree tree = PointRegionTree(vertices_per_leaf, spatial_subdivision, build=False)
         cdef Mesh mesh = tree.mesh
         _c_reader.read_mesh(dereference(mesh._c_mesh), bytes(str(path), encoding='utf8'))
         tree._c_tree.build_tree()
         return tree
 
+    @classmethod
+    def from_soup(self, soup: Soup):
+        self._c_tree.build_tree(soup)
+
+    @classmethod
+    def from_points(self, points: c_Terrain_Trees.vertex_multifield):
+        self._c_tree.build_tree(points)
+
+    cdef set_tree(self, c_Terrain_Trees.PRT_Tree *tree):
+        self._c_tree = tree
+
     def to_file(self, path: PathLike):
-        # cdef Node_V root_node = self._c_tree.get_root()
-        # _c_writer.write_tree_VTK(bytes(str(path), encoding='utf8'), root_node, self.__division_type, self._c_tree.get_mesh())
-        pass
+        _c_writer.write_tree_VTK(bytes(str(path), encoding='utf8'), self._c_tree.get_root(), dereference(new c_Terrain_Trees.Spatial_Subdivision(self.__subdivision.children)), self._c_tree.get_mesh())
 
     @property
     def mesh(self) -> Mesh:
@@ -819,26 +928,14 @@ cdef class PointRegionTree(Tree):
         return mesh
 
     @property
-    def root(self) -> Node_V:
-        cdef Node_V node = Node_V()
-        node._c_node_v = &self._c_tree.get_root()
-        return node
+    def root(self) -> VertexNode:
+        cdef VertexNode root = VertexNode()
+        root.set_node(&self._c_tree.get_root())
+        return root
 
     @property
     def leaf_blocks(self) -> int:
         return self._c_tree.get_leaves_number()
-
-    @property
-    def critical_points(self):
-        if not self.__critical_points.__computed:
-            self.__critical_points.compute()
-        return self.__critical_points
-
-    @property
-    def triangle_slopes(self):
-        if not self.__triangle_slopes.__computed:
-            self.__triangle_slopes.compute()
-        return self.__triangle_slopes
 
     def reindex(self, save_vertex_indices: bool, save_triangle_indices: bool):
         cdef c_Terrain_Trees.Reindexer _c_reindexer = c_Terrain_Trees.Reindexer()
@@ -852,3 +949,15 @@ cdef class PointRegionTree(Tree):
             save_vertex_indices,
             original_triangle_indices
         )
+
+    @property
+    def critical_points(self):
+        if not self.__critical_points.computed:
+            self.__critical_points.compute(self.root, self.__subdivision)
+        return self.__critical_points
+
+    @property
+    def triangle_slopes(self):
+        if not self.__triangle_slopes.computed:
+            self.__triangle_slopes.compute(self.root, self.__subdivision)
+        return self.__triangle_slopes
