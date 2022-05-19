@@ -6,7 +6,7 @@ readme = 'README.md'
 requires-python = '>=3.6'
 license = { file = 'LICENSE' }
 authors = [{ name = 'Yunting Song', email = 'ytsong@terpmail.umd.edu' }, { name = 'Zach Burnett', email = 'zrb@umd.edu' }]
-dependencies = ['typepigeon']
+dependencies = ['typepigeon >=1.0']
 
 [project.optional-dependencies]
 testing = ['pytest', 'pytest-cov', 'pytest-xdist']
