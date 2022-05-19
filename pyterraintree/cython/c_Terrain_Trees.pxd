@@ -10,7 +10,10 @@ cdef extern from "basic_types/basic_wrappers.h":
     ctypedef unsigned utype
 
     ctypedef int itype
+    ctypedef unsigned utype
     ctypedef vector[int] ivect
+    ctypedef vector[utype] uvect
+    ctypedef c_set[ivect] ivect_set
     ctypedef c_set[int] iset
 
     ctypedef ivect VT
@@ -146,11 +149,11 @@ cdef extern from "terrain_trees/node_t.h":
     cdef cppclass Node_T:
         Node_T() except +
 
-        void get_v_range(itype & v_start, itype & v_end, Box& dom, Mesh& mesh)
+        void get_v_range(itype& v_start, itype& v_end, Box& dom, Mesh& mesh)
         c_bool indexes_vertex(itype v_start, itype v_end, itype v_id)
 
-        void get_VT(leaf_VT & all_vt, Box & dom, Mesh & mesh)
-        void get_VT(leaf_VT & all_vt, itype v_start, itype v_end, Mesh & mesh)
+        void get_VT(leaf_VT& all_vt, Box& dom, Mesh& mesh)
+        void get_VT(leaf_VT& all_vt, itype v_start, itype v_end, Mesh& mesh)
         void get_VV(leaf_VV& all_vv, Box& dom, Mesh& mesh)
         void get_VV(leaf_VV& all_vv, itype v_start, itype v_end, Mesh& mesh)
         void get_VV_vector(leaf_VV_vec& all_vv, Box& dom, Mesh& mesh)
@@ -204,7 +207,7 @@ cdef extern from "terrain_trees/tree.h":
         Spatial_Subdivision& get_subdivision()
         void build_tree()
         void build_tree(Soup& soup)
-        void build_tree_from_cloud(vertex_multifield & multifield)
+        void build_tree_from_cloud(vertex_multifield& multifield)
 
 cdef extern from "terrain_trees/prt_tree.h":
     cdef cppclass PRT_Tree(Tree):
@@ -213,7 +216,7 @@ cdef extern from "terrain_trees/prt_tree.h":
         # PRT_Tree(PRT_Tree& orig) except +
 
         void build_tree()
-        void build_tree(Soup & soup)
+        void build_tree(Soup& soup)
 
         Node_V& get_root()
         unsigned get_leaves_number()
@@ -251,6 +254,9 @@ cdef extern from "io/writer.h":
 
         @ staticmethod
         void write_box_queries(c_set[Box] boxes, string fileName)
+
+        @ staticmethod
+        void write_tree(string fileName, Node_V& root, Spatial_Subdivision& division)
 
         @ staticmethod
         void write_tree_VTK(string file_name, Node_V& root, Spatial_Subdivision& division, Mesh& mesh)
@@ -310,14 +316,57 @@ cdef extern from "terrain_features/slope_extractor.h":
     cdef cppclass Slope_Extractor:
         Slope_Extractor() except +
 
-        void compute_triangles_slopes(Node_V & n, Mesh & mesh, Spatial_Subdivision & division)
-        void compute_triangles_slopes(Node_T & n, Box & dom, int level, Mesh & mesh, Spatial_Subdivision & division)
+        void compute_triangles_slopes(Node_V& n, Mesh& mesh, Spatial_Subdivision& division)
+        void compute_triangles_slopes(Node_T& n, Box& dom, int level, Mesh& mesh, Spatial_Subdivision& division)
 
-        void compute_edges_slopes(Node_V & n, Mesh & mesh, Spatial_Subdivision & division)
-        void compute_edges_slopes(Node_T & n, Box & dom, int level, Mesh & mesh, Spatial_Subdivision & division)
+        void compute_edges_slopes(Node_V& n, Mesh& mesh, Spatial_Subdivision& division)
+        void compute_edges_slopes(Node_T& n, Box& dom, int level, Mesh& mesh, Spatial_Subdivision& division)
 
         void print_slopes_stats()
         void print_slopes_stats(utype tnum)
 
         void reset_stats()
         c_map[itype, coord_type] get_tri_slopes()
+
+cdef extern from "terrain_features/Aspect.h":
+    cdef cppclass Aspect:
+        Aspect() except +
+
+        void compute_triangles_aspects(Node_V& n, Mesh& mesh, Spatial_Subdivision& division)
+        void compute_triangles_aspects(Node_T& n, Box& dom, int level, Mesh& mesh, Spatial_Subdivision& division)
+
+        void print_aspects_stats()
+        void print_aspects_stats(utype tnum)
+
+        void reset_stats()
+
+cdef extern from "morse/forman_gradient.h":
+    cdef cppclass Forman_Gradient:
+        Forman_Gradient(itype num_t) except +
+
+        c_bool is_triangle_critical(itype t)
+        c_bool is_edge_critical(const ivect& e, const pair[itype, itype]& et, Mesh& mesh)
+        c_bool is_edge_critical(const ivect& e, itype etstar, Mesh& mesh)
+        c_bool is_vertex_critical(itype v, itype t_id, Mesh& mesh)
+
+        void set_VE(itype v, itype v2, pair[itype, itype]& et, Mesh& mesh)
+        void set_VE(itype v, itype v2, leaf_ET& et, Mesh& mesh)
+        void free_VE(itype v1, itype v2, pair[itype, itype]& et, Mesh& mesh)
+
+        void set_ET(itype t, const ivect& edge, Mesh& mesh);
+        void free_ET(int v_pos, itype t)
+
+cdef extern from "morse/forman_gradient_computation.h":
+    cdef cppclass Forman_Gradient_Computation:
+        Forman_Gradient_Computation() except +
+
+        void compute_gradient_vector(Forman_Gradient& gradient, Node_V& n, Mesh& mesh, Spatial_Subdivision& division)
+        void compute_gradient_vector(Forman_Gradient& gradient, Node_T& n, Box& n_dom, Mesh& mesh, Spatial_Subdivision& division)
+        void compute_gradient_vector(Forman_Gradient& gradient, Node_V& n, Mesh& mesh, Spatial_Subdivision& division, c_bool output)
+        void compute_gradient_vector(Forman_Gradient& gradient, Node_T& n, Box& n_dom, Mesh& mesh, Spatial_Subdivision& division, c_bool output)
+
+        void initial_filtering(Mesh& mesh);
+        void initial_filtering_IA(Mesh& mesh);
+        uvect get_filtration()
+        void reset_filtering(Mesh& mesh, ivect& original_vertex_indices);
+        c_map[short, ivect_set]& get_critical_simplices()

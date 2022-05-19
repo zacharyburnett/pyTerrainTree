@@ -1,5 +1,4 @@
 #cython: language_level=3
-from ctypes import Union
 from os import PathLike
 from typing import List
 
@@ -599,10 +598,6 @@ cdef class SoupTriangles:
     cdef c_Terrain_Trees.Soup *_c_soup
 
     def __cinit__(self):
-        """
-        :param soup: soup to attach triangles to
-        """
-
         self._c_soup = new c_Terrain_Trees.Soup()
 
     cdef set_soup(self, c_Terrain_Trees.Soup *soup):
@@ -654,7 +649,6 @@ cdef class Soup:
 
     def __cinit__(self):
         self._c_soup = new c_Terrain_Trees.Soup()
-
         self.__triangles = SoupTriangles()
         self.__triangles.set_soup(self._c_soup)
 
@@ -668,8 +662,11 @@ cdef class Soup:
         :param path: file path to soup
         """
 
+        cdef c_Terrain_Trees.Soup *soup = new c_Terrain_Trees.Soup()
+        _c_reader.read_soup(dereference(soup), bytes(str(path), encoding='utf8'))
+
         cdef Soup instance = cls()
-        _c_reader.read_soup(dereference(instance._c_soup), bytes(str(path), encoding='utf8'))
+        instance.set_soup(soup)
         return instance
 
     @property
@@ -683,8 +680,8 @@ cdef class Soup:
 cdef class SpatialSubdivision:
     cdef c_Terrain_Trees.Spatial_Subdivision *_c_subdivision
 
-    def __cinit__(self, children: int):
-        self._c_subdivision = new c_Terrain_Trees.Spatial_Subdivision(children)
+    def __cinit__(self, children_per_node: int):
+        self._c_subdivision = new c_Terrain_Trees.Spatial_Subdivision(children_per_node)
 
     cdef set_subdivision(self, c_Terrain_Trees.Spatial_Subdivision *subdivision):
         self._c_subdivision = subdivision
@@ -706,37 +703,41 @@ cdef class MeshCriticalPoints:
     cdef set_mesh(self, c_Terrain_Trees.Mesh *mesh):
         self._c_mesh = mesh
 
-    def compute(self, root_node: Union[VertexNode, TriangleNode], subdivision: SpatialSubdivision):
+    cdef compute(self, root_node: VertexNode, subdivision: SpatialSubdivision):
         """
         add critical points information to the given mesh
         """
 
-        raise NotImplementedError()
+        self._c_critical_points_extractor.compute_critical_points(
+            dereference(root_node._c_node),
+            dereference(self._c_mesh),
+            dereference(subdivision._c_subdivision),
+        )
+        # self._c_critical_points_extractor.compute_critical_points(
+        #     dereference(root_node._c_node),
+        #     dereference(domain._c_box),
+        #     dereference(self._c_mesh),
+        #     dereference(subdivision._c_subdivision),
+        # )
+        self.__computed = True
 
+    @property
     def computed(self) -> bool:
         return self.__computed
+
+    @property
+    def indices(self) -> [int]:
+        return self._c_critical_points_extractor.get_critical_points()
 
     def print_stats(self):
         self._c_critical_points_extractor.print_stats()
 
-cdef class VertexNodeMeshCriticalPoints(MeshCriticalPoints):
-    def compute(self, root_node: VertexNode, subdivision: SpatialSubdivision):
-        self._c_critical_points_extractor.compute_critical_points(
-            dereference(root_node._c_node),
+    def to_file(self, path: PathLike):
+        _c_writer.write_critical_points(
+            str(path),
+            self.indices,
             dereference(self._c_mesh),
-            dereference(subdivision._c_subdivision),
         )
-        self.__computed = True
-
-cdef class TriangleNodeMeshCriticalPoints(MeshCriticalPoints):
-    def compute(self, root_node: TriangleNode, subdivision: SpatialSubdivision, domain: Box):
-        self._c_critical_points_extractor.compute_critical_points(
-            dereference(root_node._c_node),
-            dereference(domain._c_box),
-            dereference(self._c_mesh),
-            dereference(subdivision._c_subdivision),
-        )
-        self.__computed = True
 
 cdef class MeshTriangleSlopes:
     cdef c_Terrain_Trees.c_bool __computed
@@ -744,10 +745,6 @@ cdef class MeshTriangleSlopes:
     cdef c_Terrain_Trees.Mesh *_c_mesh
 
     def __cinit__(self):
-        """
-        :param mesh: mesh to attach triangle slopes to
-        """
-
         self._c_mesh = new c_Terrain_Trees.Mesh()
         self._c_slope_extractor = new c_Terrain_Trees.Slope_Extractor()
         self.__computed = False
@@ -755,51 +752,140 @@ cdef class MeshTriangleSlopes:
     cdef set_mesh(self, c_Terrain_Trees.Mesh *mesh):
         self._c_mesh = mesh
 
-    def compute(self, root_node: Union[VertexNode, TriangleNode], subdivision: SpatialSubdivision):
+    cdef compute(self, root_node: VertexNode, subdivision: SpatialSubdivision):
         """
         add triangle slope information to the given mesh
         """
 
-        raise NotImplementedError()
+        self._c_slope_extractor.compute_triangles_slopes(
+            dereference(root_node._c_node),
+            dereference(self._c_mesh),
+            dereference(subdivision._c_subdivision),
+        )
+        self._c_slope_extractor.compute_edges_slopes(
+            dereference(root_node._c_node),
+            dereference(self._c_mesh),
+            dereference(subdivision._c_subdivision),
+        )
+        # self._c_slope_extractor.compute_triangles_slopes(
+        #     dereference(root_node._c_node),
+        #     dereference(domain._c_box),
+        #     level,
+        #     dereference(self._c_mesh),
+        #     dereference(subdivision._c_subdivision),
+        # )
+        # self._c_slope_extractor.compute_edges_slopes(
+        #     dereference(root_node._c_node),
+        #     dereference(domain._c_box),
+        #     level,
+        #     dereference(self._c_mesh),
+        #     dereference(subdivision._c_subdivision),
+        # )
+        self.__computed = True
 
+    @property
+    def computed(self) -> bool:
+        return self.__computed
+
+    @property
+    def indices(self) -> [int]:
+        return self._c_slope_extractor.get_tri_slopes()
+
+    def print_stats(self):
+        self._c_slope_extractor.print_slopes_stats()
+
+    def to_file(self, path: PathLike):
+        _c_writer.write_tri_slope_VTK(
+            str(path),
+            dereference(self._c_mesh),
+            self.indices,
+        )
+
+cdef class MeshTriangleAspects:
+    cdef c_Terrain_Trees.c_bool __computed
+    cdef c_Terrain_Trees.Aspect *_c_aspect
+    cdef c_Terrain_Trees.Mesh *_c_mesh
+
+    def __cinit__(self):
+        self._c_mesh = new c_Terrain_Trees.Mesh()
+        self._c_aspect = new c_Terrain_Trees.Aspect()
+        self.__computed = False
+
+    cdef set_mesh(self, c_Terrain_Trees.Mesh *mesh):
+        self._c_mesh = mesh
+
+    cdef compute(self, root_node: VertexNode, subdivision: SpatialSubdivision):
+        """
+        add triangle aspect information to the given mesh
+        """
+
+        self._c_aspect.compute_triangles_aspects(
+            dereference(root_node._c_node),
+            dereference(self._c_mesh),
+            dereference(subdivision._c_subdivision),
+        )
+        # self._c_aspect.compute_triangles_aspects(
+        #     dereference(root_node._c_node),
+        #     dereference(domain._c_box),
+        #     level,
+        #     dereference(self._c_mesh),
+        #     dereference(subdivision._c_subdivision),
+        # )
+        self.__computed = True
+
+    @property
     def computed(self) -> bool:
         return self.__computed
 
     def print_stats(self):
-        self._c_slope_extractor.print_slopes_stats()
-        self._c_slope_extractor.reset_stats()
+        self._c_aspect.print_aspects_stats()
 
-cdef class VertexNodeMeshTriangleSlopes(MeshTriangleSlopes):
-    def compute(self, root_node: VertexNode, subdivision: SpatialSubdivision):
-        self._c_slope_extractor.compute_triangles_slopes(
+    def to_file(self, path: PathLike):
+        raise NotImplementedError()
+
+cdef class MeshFormanGradient:
+    cdef c_Terrain_Trees.c_bool __computed
+    cdef c_Terrain_Trees.Forman_Gradient *_c_forman_gradient
+    cdef c_Terrain_Trees.Forman_Gradient_Computation *_c_forman_gradient_computation
+    cdef c_Terrain_Trees.Mesh *_c_mesh
+
+    def __cinit__(self):
+        self._c_mesh = new c_Terrain_Trees.Mesh()
+        self.__computed = False
+
+    cdef set_mesh(self, c_Terrain_Trees.Mesh *mesh):
+        self._c_mesh = mesh
+        self._c_forman_gradient = new c_Terrain_Trees.Forman_Gradient(self._c_mesh.get_triangles_num())
+
+    cdef compute(self, root_node: VertexNode, subdivision: SpatialSubdivision):
+        """
+        add Forman gradient information to the given mesh
+        """
+
+        self._c_forman_gradient_computation.initial_filtering_IA(dereference(self._c_mesh))
+        self._c_forman_gradient_computation.compute_gradient_vector(
+            dereference(self._c_forman_gradient),
             dereference(root_node._c_node),
             dereference(self._c_mesh),
             dereference(subdivision._c_subdivision),
-        )
-        self._c_slope_extractor.compute_edges_slopes(
-            dereference(root_node._c_node),
-            dereference(self._c_mesh),
-            dereference(subdivision._c_subdivision),
-        )
+        );
+
         self.__computed = True
 
-cdef class TriangleNodeMeshTriangleSlopes(MeshTriangleSlopes):
-    def compute(self, root_node: TriangleNode, subdivision: SpatialSubdivision, domain: Box, level: int):
-        self._c_slope_extractor.compute_triangles_slopes(
-            dereference(root_node._c_node),
-            dereference(domain._c_box),
-            level,
+    @property
+    def computed(self) -> bool:
+        return self.__computed
+
+    @property
+    def critical_simplices(self) -> {int, [[int]]}:
+        return self._c_forman_gradient_computation.get_critical_simplices()
+
+    def to_file(self, path: PathLike):
+        _c_writer.write_critical_points_morse(
+            str(path),
+            self.critical_simplices,
             dereference(self._c_mesh),
-            dereference(subdivision._c_subdivision),
         )
-        self._c_slope_extractor.compute_edges_slopes(
-            dereference(root_node._c_node),
-            dereference(domain._c_box),
-            level,
-            dereference(self._c_mesh),
-            dereference(subdivision._c_subdivision),
-        )
-        self.__computed = True
 
 cdef class Tree:
     """
@@ -810,7 +896,9 @@ cdef class Tree:
     cdef int __vertices_per_leaf
     cdef SpatialSubdivision __subdivision
     cdef MeshCriticalPoints __critical_points
+    cdef MeshFormanGradient __forman_gradient
     cdef MeshTriangleSlopes __triangle_slopes
+    cdef MeshTriangleAspects __triangle_aspects
 
     @classmethod
     def from_file(cls, path: PathLike, vertices_per_leaf: int, division_type: int) -> PointRegionTree:
@@ -876,14 +964,22 @@ cdef class Tree:
         raise NotImplementedError()
 
     @property
+    def forman_gradient(self):
+        raise NotImplementedError()
+
+    @property
     def triangle_slopes(self):
+        raise NotImplementedError()
+
+    @property
+    def triangle_aspects(self):
         raise NotImplementedError()
 
 cdef class PointRegionTree(Tree):
     cdef c_Terrain_Trees.PRT_Tree *_c_tree
 
-    def __cinit__(self, vertices_per_leaf: int, spatial_subdivision: int, build: bool = True):
-        self._c_tree = new c_Terrain_Trees.PRT_Tree(vertices_per_leaf, spatial_subdivision)
+    def __cinit__(self, vertices_per_leaf: int, children_per_node: int, build: bool = True):
+        self._c_tree = new c_Terrain_Trees.PRT_Tree(vertices_per_leaf, children_per_node)
 
         if build:
             self._c_tree.build_tree()
@@ -892,25 +988,33 @@ cdef class PointRegionTree(Tree):
         self.__mesh.set_mesh(&self._c_tree.get_mesh())
 
         self.__vertices_per_leaf = vertices_per_leaf
-        self.__subdivision = SpatialSubdivision(spatial_subdivision)
+        self.__subdivision = SpatialSubdivision(children_per_node)
 
-        self.__critical_points = VertexNodeMeshCriticalPoints(self.__mesh)
+        self.__critical_points = MeshCriticalPoints()
         self.__critical_points.set_mesh(self.__mesh._c_mesh)
 
-        self.__triangle_slopes = VertexNodeMeshTriangleSlopes(self.__mesh)
+        self.__forman_gradient = MeshFormanGradient()
+        self.__forman_gradient.set_mesh(self.__mesh._c_mesh)
+
+        self.__triangle_slopes = MeshTriangleSlopes()
         self.__triangle_slopes.set_mesh(self.__mesh._c_mesh)
 
+        self.__triangle_aspects = MeshTriangleAspects()
+        self.__triangle_aspects.set_mesh(self.__mesh._c_mesh)
+
     @classmethod
-    def from_file(cls, path: PathLike, vertices_per_leaf: int, spatial_subdivision: int) -> PointRegionTree:
-        cdef PointRegionTree tree = PointRegionTree(vertices_per_leaf, spatial_subdivision, build=False)
+    def from_file(cls, path: PathLike, vertices_per_leaf: int, children_per_node: int) -> PointRegionTree:
+        cdef PointRegionTree tree = PointRegionTree(vertices_per_leaf, children_per_node, build=False)
         cdef Mesh mesh = tree.mesh
         _c_reader.read_mesh(dereference(mesh._c_mesh), bytes(str(path), encoding='utf8'))
         tree._c_tree.build_tree()
         return tree
 
-    @classmethod
-    def from_soup(self, soup: Soup):
-        self._c_tree.build_tree(soup)
+    # @classmethod
+    # def from_soup(cls, soup: Soup, vertices_per_leaf: int, children_per_node: int):
+    #     cdef PointRegionTree tree = PointRegionTree(vertices_per_leaf, children_per_node, build=False)
+    #     tree._c_tree.build_tree(dereference(soup._c_soup))
+    #     return tree
 
     @classmethod
     def from_points(self, points: c_Terrain_Trees.vertex_multifield):
@@ -919,8 +1023,19 @@ cdef class PointRegionTree(Tree):
     cdef set_tree(self, c_Terrain_Trees.PRT_Tree *tree):
         self._c_tree = tree
 
+        self.__mesh.set_mesh(&self._c_tree.get_mesh())
+
+        self.__critical_points.set_mesh(self.__mesh._c_mesh)
+        self.__forman_gradient.set_mesh(self.__mesh._c_mesh)
+        self.__triangle_slopes.set_mesh(self.__mesh._c_mesh)
+        self.__triangle_aspects.set_mesh(self.__mesh._c_mesh)
+
     def to_file(self, path: PathLike):
-        _c_writer.write_tree_VTK(bytes(str(path), encoding='utf8'), self._c_tree.get_root(), dereference(new c_Terrain_Trees.Spatial_Subdivision(self.__subdivision.children)), self._c_tree.get_mesh())
+        _c_writer.write_tree(
+            str(path),
+            self._c_tree.get_root(),
+            dereference(new c_Terrain_Trees.Spatial_Subdivision(self.__subdivision.children)),
+        )
 
     @property
     def mesh(self) -> Mesh:
@@ -957,7 +1072,19 @@ cdef class PointRegionTree(Tree):
         return self.__critical_points
 
     @property
+    def forman_gradient(self):
+        if not self.__forman_gradient.computed:
+            self.__forman_gradient.compute(self.root, self.__subdivision)
+        return self.__forman_gradient
+
+    @property
     def triangle_slopes(self):
         if not self.__triangle_slopes.computed:
             self.__triangle_slopes.compute(self.root, self.__subdivision)
         return self.__triangle_slopes
+
+    @property
+    def triangle_aspects(self):
+        if not self.__triangle_aspects.computed:
+            self.__triangle_aspects.compute(self.root, self.__subdivision)
+        return self.__triangle_aspects
