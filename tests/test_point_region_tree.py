@@ -1,6 +1,7 @@
-from Terrain_Trees import PointRegionTree, Soup, VertexNode
+from Terrain_Trees import PointRegionTree, VertexNode
 
 from tests import INPUT_DIRECTORY
+
 
 # def test_read_soup():
 #     soup = Soup.from_file(str(INPUT_DIRECTORY / 'simple_terrain.soup'))
@@ -81,11 +82,11 @@ def test_critical_points():
     critical_points.print_stats()
 
 
-def test_critical_simplices():
-    tree_1 = PointRegionTree.from_file(str(INPUT_DIRECTORY / 'devil_0.tri'), 1, 4)
-
-    forman_gradient = tree_1.forman_gradient
-    critical_simplices = forman_gradient.critical_simplices
+# def test_forman_gradient():
+#     tree_1 = PointRegionTree.from_file(str(INPUT_DIRECTORY / 'devil_0.tri'), 1, 4)
+#
+#     forman_gradient = tree_1.forman_gradient
+#     critical_simplices = forman_gradient.critical_simplices
 
 
 def test_triangle_slopes():

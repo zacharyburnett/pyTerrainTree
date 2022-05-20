@@ -703,15 +703,15 @@ cdef class MeshCriticalPoints:
     cdef set_mesh(self, c_Terrain_Trees.Mesh *mesh):
         self._c_mesh = mesh
 
-    cdef compute(self, root_node: VertexNode, subdivision: SpatialSubdivision):
+    cdef compute(self, c_Terrain_Trees.Node_V *root_node, c_Terrain_Trees.Spatial_Subdivision *subdivision):
         """
         add critical points information to the given mesh
         """
 
         self._c_critical_points_extractor.compute_critical_points(
-            dereference(root_node._c_node),
+            dereference(root_node),
             dereference(self._c_mesh),
-            dereference(subdivision._c_subdivision),
+            dereference(subdivision),
         )
         # self._c_critical_points_extractor.compute_critical_points(
         #     dereference(root_node._c_node),
@@ -752,20 +752,20 @@ cdef class MeshTriangleSlopes:
     cdef set_mesh(self, c_Terrain_Trees.Mesh *mesh):
         self._c_mesh = mesh
 
-    cdef compute(self, root_node: VertexNode, subdivision: SpatialSubdivision):
+    cdef compute(self, c_Terrain_Trees.Node_V *root_node, c_Terrain_Trees.Spatial_Subdivision *subdivision):
         """
         add triangle slope information to the given mesh
         """
 
         self._c_slope_extractor.compute_triangles_slopes(
-            dereference(root_node._c_node),
+            dereference(root_node),
             dereference(self._c_mesh),
-            dereference(subdivision._c_subdivision),
+            dereference(subdivision),
         )
         self._c_slope_extractor.compute_edges_slopes(
-            dereference(root_node._c_node),
+            dereference(root_node),
             dereference(self._c_mesh),
-            dereference(subdivision._c_subdivision),
+            dereference(subdivision),
         )
         # self._c_slope_extractor.compute_triangles_slopes(
         #     dereference(root_node._c_node),
@@ -814,22 +814,22 @@ cdef class MeshTriangleAspects:
     cdef set_mesh(self, c_Terrain_Trees.Mesh *mesh):
         self._c_mesh = mesh
 
-    cdef compute(self, root_node: VertexNode, subdivision: SpatialSubdivision):
+    cdef compute(self, c_Terrain_Trees.Node_V *root_node, c_Terrain_Trees.Spatial_Subdivision *subdivision):
         """
         add triangle aspect information to the given mesh
         """
 
         self._c_aspect.compute_triangles_aspects(
-            dereference(root_node._c_node),
+            dereference(root_node),
             dereference(self._c_mesh),
-            dereference(subdivision._c_subdivision),
+            dereference(subdivision),
         )
         # self._c_aspect.compute_triangles_aspects(
-        #     dereference(root_node._c_node),
+        #     dereference(root_node),
         #     dereference(domain._c_box),
         #     level,
         #     dereference(self._c_mesh),
-        #     dereference(subdivision._c_subdivision),
+        #     dereference(subdivision),
         # )
         self.__computed = True
 
@@ -851,24 +851,25 @@ cdef class MeshFormanGradient:
 
     def __cinit__(self):
         self._c_mesh = new c_Terrain_Trees.Mesh()
+        self._c_forman_gradient_computation = new c_Terrain_Trees.Forman_Gradient_Computation()
         self.__computed = False
 
     cdef set_mesh(self, c_Terrain_Trees.Mesh *mesh):
         self._c_mesh = mesh
         self._c_forman_gradient = new c_Terrain_Trees.Forman_Gradient(self._c_mesh.get_triangles_num())
 
-    cdef compute(self, root_node: VertexNode, subdivision: SpatialSubdivision):
+    cdef compute(self, c_Terrain_Trees.Node_V *root_node, c_Terrain_Trees.Spatial_Subdivision *subdivision):
         """
         add Forman gradient information to the given mesh
         """
 
-        self._c_forman_gradient_computation.initial_filtering_IA(dereference(self._c_mesh))
+        # self._c_forman_gradient_computation.initial_filtering_IA(dereference(self._c_mesh))
         self._c_forman_gradient_computation.compute_gradient_vector(
             dereference(self._c_forman_gradient),
-            dereference(root_node._c_node),
+            dereference(root_node),
             dereference(self._c_mesh),
-            dereference(subdivision._c_subdivision),
-        );
+            dereference(subdivision),
+        )
 
         self.__computed = True
 
@@ -977,6 +978,7 @@ cdef class Tree:
 
 cdef class PointRegionTree(Tree):
     cdef c_Terrain_Trees.PRT_Tree *_c_tree
+    cdef c_Terrain_Trees.Node_V *_c_root
 
     def __cinit__(self, vertices_per_leaf: int, children_per_node: int, build: bool = True):
         self._c_tree = new c_Terrain_Trees.PRT_Tree(vertices_per_leaf, children_per_node)
@@ -986,6 +988,8 @@ cdef class PointRegionTree(Tree):
 
         self.__mesh = Mesh()
         self.__mesh.set_mesh(&self._c_tree.get_mesh())
+
+        self._c_root = &self._c_tree.get_root()
 
         self.__vertices_per_leaf = vertices_per_leaf
         self.__subdivision = SpatialSubdivision(children_per_node)
@@ -1024,6 +1028,9 @@ cdef class PointRegionTree(Tree):
         self._c_tree = tree
 
         self.__mesh.set_mesh(&self._c_tree.get_mesh())
+        self._c_tree.build_tree()
+
+        self._c_root = &self._c_tree.get_root()
 
         self.__critical_points.set_mesh(self.__mesh._c_mesh)
         self.__forman_gradient.set_mesh(self.__mesh._c_mesh)
@@ -1045,7 +1052,7 @@ cdef class PointRegionTree(Tree):
     @property
     def root(self) -> VertexNode:
         cdef VertexNode root = VertexNode()
-        root.set_node(&self._c_tree.get_root())
+        root.set_node(self._c_root)
         return root
 
     @property
@@ -1068,23 +1075,23 @@ cdef class PointRegionTree(Tree):
     @property
     def critical_points(self):
         if not self.__critical_points.computed:
-            self.__critical_points.compute(self.root, self.__subdivision)
+            self.__critical_points.compute(self._c_root, self.__subdivision._c_subdivision)
         return self.__critical_points
 
     @property
     def forman_gradient(self):
         if not self.__forman_gradient.computed:
-            self.__forman_gradient.compute(self.root, self.__subdivision)
+            self.__forman_gradient.compute(self._c_root, self.__subdivision._c_subdivision)
         return self.__forman_gradient
 
     @property
     def triangle_slopes(self):
         if not self.__triangle_slopes.computed:
-            self.__triangle_slopes.compute(self.root, self.__subdivision)
+            self.__triangle_slopes.compute(self._c_root, self.__subdivision._c_subdivision)
         return self.__triangle_slopes
 
     @property
     def triangle_aspects(self):
         if not self.__triangle_aspects.computed:
-            self.__triangle_aspects.compute(self.root, self.__subdivision)
+            self.__triangle_aspects.compute(self._c_root, self.__subdivision._c_subdivision)
         return self.__triangle_aspects
