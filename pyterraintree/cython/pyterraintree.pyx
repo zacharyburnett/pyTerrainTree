@@ -1,12 +1,15 @@
 #cython: language_level=3
 from os import PathLike
+from pathlib import Path
 from typing import List
 
 # @formatter:off
+
 cimport c_Terrain_Trees
 from cpython.object cimport Py_EQ, Py_GE, Py_GT, Py_LE, Py_LT, Py_NE
 from cython.operator cimport dereference
 from libcpp.vector cimport vector
+
 # @formatter:on
 
 cdef class Point:
@@ -734,7 +737,7 @@ cdef class MeshCriticalPoints:
 
     def to_file(self, path: PathLike):
         _c_writer.write_critical_points(
-            str(path),
+            bytes(str(path), encoding='utf8'),
             self.indices,
             dereference(self._c_mesh),
         )
@@ -796,7 +799,7 @@ cdef class MeshTriangleSlopes:
 
     def to_file(self, path: PathLike):
         _c_writer.write_tri_slope_VTK(
-            str(path),
+            bytes(str(path), encoding='utf8'),
             dereference(self._c_mesh),
             self.indices,
         )
@@ -883,7 +886,7 @@ cdef class MeshFormanGradient:
 
     def to_file(self, path: PathLike):
         _c_writer.write_critical_points_morse(
-            str(path),
+            bytes(str(path), encoding='utf8'),
             self.critical_simplices,
             dereference(self._c_mesh),
         )
@@ -1010,7 +1013,11 @@ cdef class PointRegionTree(Tree):
     def from_file(cls, path: PathLike, vertices_per_leaf: int, children_per_node: int) -> PointRegionTree:
         cdef PointRegionTree tree = PointRegionTree(vertices_per_leaf, children_per_node, build=False)
         cdef Mesh mesh = tree.mesh
-        _c_reader.read_mesh(dereference(mesh._c_mesh), bytes(str(path), encoding='utf8'))
+        if Path(path).suffix in ['.tree', '.vtk']:
+            _c_reader.read_tree(dereference(tree._c_tree), tree._c_tree.get_root(), bytes(str(path), encoding='utf8'))
+        else:
+            _c_reader.read_mesh(dereference(mesh._c_mesh), bytes(str(path), encoding='utf8'))
+            tree.__mesh.set_mesh(mesh._c_mesh)
         tree._c_tree.build_tree()
         return tree
 
@@ -1039,7 +1046,7 @@ cdef class PointRegionTree(Tree):
 
     def to_file(self, path: PathLike):
         _c_writer.write_tree(
-            str(path),
+            bytes(str(path), encoding='utf8'),
             self._c_tree.get_root(),
             dereference(new c_Terrain_Trees.Spatial_Subdivision(self.__subdivision.children)),
         )

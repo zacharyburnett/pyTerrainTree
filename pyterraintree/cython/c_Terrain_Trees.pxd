@@ -239,6 +239,9 @@ cdef extern from "io/reader.h":
         @ staticmethod
         c_bool read_soup(Soup& soup, string path)
 
+        @ staticmethod
+        c_bool read_tree(Tree& tree, Node_V& n, string fileName)
+
 
 cdef extern from "io/writer.h":
     ctypedef fused D:

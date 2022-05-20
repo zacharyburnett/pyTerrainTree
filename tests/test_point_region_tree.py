@@ -1,7 +1,6 @@
 from Terrain_Trees import PointRegionTree, VertexNode
 
-from tests import INPUT_DIRECTORY
-
+from tests import INPUT_DIRECTORY, OUTPUT_DIRECTORY
 
 # def test_read_soup():
 #     soup = Soup.from_file(str(INPUT_DIRECTORY / 'simple_terrain.soup'))
@@ -76,9 +75,13 @@ def test_nodes():
 
 
 def test_critical_points():
+    output_directory = OUTPUT_DIRECTORY / 'test_critical_points'
+    output_directory.mkdir(parents=True, exist_ok=True)
+
     tree_1 = PointRegionTree.from_file(str(INPUT_DIRECTORY / 'devil_0.tri'), 1, 4)
 
     critical_points = tree_1.critical_points
+    critical_points.to_file(str(output_directory / 'test_critical_points'))
     critical_points.print_stats()
 
 
@@ -90,9 +93,13 @@ def test_critical_points():
 
 
 def test_triangle_slopes():
+    output_directory = OUTPUT_DIRECTORY / 'test_triangle_slopes'
+    output_directory.mkdir(parents=True, exist_ok=True)
+
     tree_1 = PointRegionTree.from_file(str(INPUT_DIRECTORY / 'devil_0.tri'), 1, 4)
 
     triangle_slopes = tree_1.triangle_slopes
+    triangle_slopes.to_file(str(output_directory / 'test_triangle_slopes'))
     triangle_slopes.print_stats()
 
 
